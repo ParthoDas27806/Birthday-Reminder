@@ -1,884 +1,1002 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Birthday Reminder</title>
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#0a0a0f" />
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/ff6b6b/ffffff?text=B" />
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      ::-webkit-scrollbar { width: 4px; }
-      ::-webkit-scrollbar-track { background: #0d0d12; }
-      ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-      body { min-height: 100vh; background: linear-gradient(135deg, #232526 0%, #414345 100%); font-family: "Poppins", sans-serif; color: #e8e0d5; position: relative; overflow-x: hidden; }
-      .float-shape { position: fixed; z-index: 0; opacity: 0.18; pointer-events: none; animation: floatShape 12s ease-in-out infinite alternate; }
-      .float-shape1 { width: 220px; height: 220px; top: 40px; left: -80px; background: radial-gradient(circle, #ff6b6b 60%, transparent 100%); animation-delay: 0s; }
-      .float-shape2 { width: 180px; height: 180px; bottom: 80px; right: -60px; background: radial-gradient(circle, #48dbfb 60%, transparent 100%); animation-delay: 2s; }
-      .float-shape3 { width: 120px; height: 120px; top: 60%; left: 60%; background: radial-gradient(circle, #ffc312 60%, transparent 100%); animation-delay: 4s; }
-      @keyframes floatShape { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-30px) scale(1.08); } }
-      input, select, textarea { font-family: inherit; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-      @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
-      @keyframes fall { to { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
-      .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease; cursor: pointer; }
-      .card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); background: rgba(255,255,255,0.05) !important; }
-      .btn { cursor: pointer; border: none; font-family: inherit; font-weight: 500; transition: all 0.2s ease; background: none; border-radius: 20px !important; }
-      .btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-      .btn:active { transform: scale(0.96); }
-      .today-pulse { animation: pulse 2s infinite; }
-      .shimmer-text { background: linear-gradient(90deg, #ff6b6b, #ffc312, #48dbfb, #ff6b6b); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 4s linear infinite; }
-      .confetti-piece { position: fixed; top: -20px; pointer-events: none; }
-      #confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; display: none; }
-      #app { max-width: 520px; margin: 0 auto; padding: 0 0 90px; position: relative; z-index: 1; }
-      .blob1 { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(255,107,107,0.08), transparent 70%); top: -100px; right: -100px; pointer-events: none; z-index: -1; }
-      .blob2 { position: fixed; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(72,219,251,0.06), transparent 70%); bottom: 50px; left: -80px; pointer-events: none; z-index: -1; }
-      .input-style { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #e8e0d5; border-radius: 12px; padding: 12px 16px; font-size: 0.9rem; outline: none; transition: all 0.2s ease; }
-      .input-style:focus { border-color: rgba(255,107,107,0.5); background: rgba(255,255,255,0.06); box-shadow: 0 0 0 3px rgba(255,107,107,0.15); }
-      .label-style { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 6px; font-weight: 600; }
-      .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 50; display: flex; align-items: flex-end; justify-content: center; animation: fadeIn 0.2s ease; }
-      .modal-sheet { background: #141419; border: 1px solid rgba(255,255,255,0.08); border-radius: 24px 24px 0 0; padding: 32px 28px; width: 100%; max-width: 480px; animation: fadeIn 0.25s ease; box-shadow: 0 -10px 40px rgba(0,0,0,0.5); }
-      #fab { position: fixed; bottom: 32px; right: 32px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #ff6b6b, #ff9f43); color: #fff; font-size: 1.8rem; line-height: 1; box-shadow: 0 8px 32px #ff6b6b55; display: flex; align-items: center; justify-content: center; z-index: 40; cursor: pointer; border: none; font-family: inherit; transition: transform 0.2s ease, box-shadow 0.2s ease; animation: fabPop 2.5s infinite alternate; }
-      #fab:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 28px rgba(255,107,107,0.6); }
-      #fab:active { transform: scale(0.95); }
-      @keyframes fabPop { 0% { transform: scale(1) translateY(0); } 60% { transform: scale(1.08) translateY(-4px); } 100% { transform: scale(1) translateY(0); } }
-      #empty-state > div:first-child { font-size: 5.5rem !important; margin-bottom: 18px !important; opacity: 1; animation: pulse 2.5s infinite; filter: drop-shadow(0 4px 24px #ff6b6b44); }
-      #empty-state { opacity: 0.7 !important; background: linear-gradient(120deg, #ff6b6b22 0%, #48dbfb22 100%); border-radius: 18px; box-shadow: 0 4px 32px 0 #0002; }
-      @keyframes buttonGlow { 0% { box-shadow: 0 0 10px rgba(255,107,107,0.4); } 50% { box-shadow: 0 0 25px rgba(255,107,107,0.8), 0 0 15px rgba(255,159,67,0.6); } 100% { box-shadow: 0 0 10px rgba(255,107,107,0.4); } }
-      .glowing-btn { animation: buttonGlow 1.5s infinite; }
-      @keyframes blowAway { 0% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); } 100% { transform: scale(1.1) translateY(-60px); opacity: 0; filter: blur(8px); } }
-      .blow-away { animation: blowAway 0.5s cubic-bezier(0.4,0,0.2,1) forwards !important; }
-      /* Google Sign-In button */
-      .google-btn { width: 100%; background: #fff; color: #3c4043; border: 1px solid #dadce0; border-radius: 20px !important; padding: 11px 16px; font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
-      .google-btn:hover { background: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
-      .divider { display: flex; align-items: center; gap: 12px; margin: 14px 0; color: #555; font-size: 0.8rem; }
-      .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
-      /* Loading overlay */
-      #loading-overlay { position: fixed; inset: 0; background: #0a0a0f; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
-      .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,107,107,0.2); border-top-color: #ff6b6b; border-radius: 50%; animation: spin 0.8s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
-      .auth-toggle { color: #ff6b6b; cursor: pointer; text-decoration: underline; font-weight: 600; }
-    </style>
-  </head>
-  <body>
-    <div class="float-shape float-shape1"></div>
-    <div class="float-shape float-shape2"></div>
-    <div class="float-shape float-shape3"></div>
-    <div id="confetti-container"></div>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OccasionVault — Never Miss a Moment</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#0d0d1a"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --primary:#7c6bff;--primary2:#ff6b9d;--accent:#ffd166;
+      --bg:#0d0d1a;--bg2:#13131f;--bg3:#1a1a2e;
+      --card:#1e1e30;--border:rgba(255,255,255,0.08);
+      --text:#f0eeff;--muted:#8884aa;
+      --green:#06d6a0;--orange:#ff9f43;--red:#ff6b6b;--blue:#48dbfb;
+    }
+    html,body{min-height:100vh;background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;color:var(--text);overflow-x:hidden;}
+    ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
+    input,select,textarea,button{font-family:inherit;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+    @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:0;}}
+    @keyframes slideIn{from{transform:translateY(100%);}to{transform:translateY(0);}}
+    @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(124,107,255,0.4);}50%{box-shadow:0 0 40px rgba(124,107,255,0.8);}}
 
-    <!-- Loading screen shown while Firebase initialises -->
-    <div id="loading-overlay">
-      <div style="font-size:3rem; filter:drop-shadow(0 4px 16px #ff6b6b88)">🎂</div>
-      <div class="spinner"></div>
-      <div style="color:#888; font-size:0.85rem;">Loading Birthday Reminder…</div>
+    /* ── LOADING ── */
+    #loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+    .spinner{width:44px;height:44px;border:3px solid rgba(124,107,255,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;}
+
+    /* ── LOGIN SCREEN ── */
+    #login-screen{position:fixed;inset:0;z-index:500;display:none;background:var(--bg);}
+    .login-wrap{display:flex;height:100%;min-height:100vh;}
+    /* Left panel */
+    .login-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding:48px 40px;background:var(--bg2);position:relative;overflow:hidden;min-width:0;}
+    .login-left::before{content:'';position:absolute;top:-80px;left:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(124,107,255,0.15),transparent 70%);pointer-events:none;}
+    .login-left::after{content:'';position:absolute;bottom:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,107,157,0.12),transparent 70%);pointer-events:none;}
+    .login-logo{display:flex;align-items:center;gap:12px;margin-bottom:40px;}
+    .login-logo-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-size:1.4rem;box-shadow:0 4px 20px rgba(124,107,255,0.4);}
+    .login-logo-name{font-size:1.3rem;font-weight:800;background:linear-gradient(90deg,var(--primary),var(--primary2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .login-heading{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;line-height:1.2;margin-bottom:8px;}
+    .login-sub{color:var(--muted);font-size:0.9rem;margin-bottom:32px;}
+    .login-field{margin-bottom:16px;}
+    .login-field label{display:block;font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+    .login-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:13px 16px;font-size:0.9rem;outline:none;transition:all 0.2s;}
+    .login-input:focus{border-color:rgba(124,107,255,0.6);background:rgba(124,107,255,0.08);box-shadow:0 0 0 3px rgba(124,107,255,0.15);}
+    .login-btn-primary{width:100%;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border:none;border-radius:12px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-bottom:16px;}
+    .login-btn-primary:hover{opacity:0.9;transform:translateY(-1px);box-shadow:0 6px 24px rgba(124,107,255,0.4);}
+    .login-divider{display:flex;align-items:center;gap:12px;margin:4px 0 16px;color:var(--muted);font-size:0.8rem;}
+    .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+    .google-login-btn{width:100%;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:12px;padding:12px 16px;font-size:0.88rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:all 0.2s;margin-bottom:12px;}
+    .google-login-btn:hover{background:#f8f9fa;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+    .guest-btn{width:100%;background:transparent;border:1px dashed rgba(255,255,255,0.15);color:var(--muted);border-radius:12px;padding:12px;font-size:0.85rem;cursor:pointer;transition:all 0.2s;}
+    .guest-btn:hover{border-color:rgba(255,255,255,0.3);color:var(--text);}
+    .login-toggle{text-align:center;font-size:0.85rem;color:var(--muted);margin-top:16px;}
+    .login-toggle span{color:var(--primary);cursor:pointer;font-weight:600;}
+    #login-error{color:var(--red);font-size:0.8rem;margin-bottom:12px;display:none;padding:8px 12px;background:rgba(255,107,107,0.1);border-radius:8px;}
+    #login-name-field{display:none;}
+    /* Right panel */
+    .login-right{width:42%;background:linear-gradient(135deg,#1a1a35 0%,#0d0d1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;position:relative;overflow:hidden;}
+    .login-right::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,107,255,0.08),rgba(255,107,157,0.06));pointer-events:none;}
+    .login-illus{position:relative;z-index:1;text-align:center;}
+    .login-illus-icon{font-size:5rem;margin-bottom:24px;filter:drop-shadow(0 8px 32px rgba(124,107,255,0.5));animation:pulse 3s infinite;}
+    .login-illus-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;margin-bottom:12px;color:#fff;}
+    .login-illus-desc{font-size:0.85rem;color:var(--muted);line-height:1.6;max-width:260px;}
+    .login-features{margin-top:28px;display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;}
+    .login-feature{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
+    .login-feature-icon{font-size:1.2rem;flex-shrink:0;}
+    .login-feature-text{font-size:0.8rem;color:var(--muted);}
+    .login-feature-text strong{display:block;color:var(--text);font-size:0.82rem;margin-bottom:1px;}
+    /* Mobile: stack vertically */
+    @media(max-width:640px){
+      .login-right{display:none;}
+      .login-left{padding:32px 24px;}
+      .login-heading{font-size:1.6rem;}
+    }
+
+    /* ── MAIN APP ── */
+    #app{display:none;max-width:540px;margin:0 auto;padding:0 0 100px;min-height:100vh;}
+
+    /* Header */
+    .app-header{padding:28px 20px 20px;background:linear-gradient(180deg,rgba(13,13,26,0.98),rgba(13,13,26,0.85));backdrop-filter:blur(12px);position:sticky;top:0;z-index:30;border-bottom:1px solid var(--border);}
+    .app-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .app-logo{display:flex;align-items:center;gap:10px;}
+    .app-logo-icon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 4px 16px rgba(124,107,255,0.35);}
+    .app-logo-text{font-size:1.1rem;font-weight:800;background:linear-gradient(90deg,var(--primary),var(--primary2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .app-logo-sub{font-size:0.68rem;color:var(--muted);margin-top:-2px;}
+    .header-actions{display:flex;gap:8px;align-items:center;}
+    .hdr-btn{background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:7px 12px;font-size:0.78rem;cursor:pointer;font-family:inherit;font-weight:500;transition:all 0.2s;white-space:nowrap;}
+    .hdr-btn:hover{background:rgba(255,255,255,0.1);}
+    .hdr-btn.danger{color:var(--red);background:rgba(255,107,107,0.08);}
+    .search-bar{position:relative;}
+    .search-bar input{width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:11px 14px 11px 40px;font-size:0.9rem;outline:none;transition:all 0.2s;}
+    .search-bar input:focus{border-color:rgba(124,107,255,0.5);background:rgba(124,107,255,0.06);}
+    .search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:0.35;font-size:0.95rem;pointer-events:none;}
+
+    /* Category filter tabs */
+    .filter-tabs{display:flex;gap:8px;padding:12px 20px;overflow-x:auto;scrollbar-width:none;}
+    .filter-tabs::-webkit-scrollbar{display:none;}
+    .filter-tab{flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:6px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap;}
+    .filter-tab.active{background:linear-gradient(135deg,var(--primary),var(--primary2));border-color:transparent;color:#fff;box-shadow:0 4px 16px rgba(124,107,255,0.3);}
+
+    /* Today banner */
+    #today-section{margin:0 20px 12px;background:linear-gradient(135deg,rgba(124,107,255,0.15),rgba(255,107,157,0.1));border:1px solid rgba(124,107,255,0.25);border-radius:16px;padding:16px;display:none;animation:fadeUp 0.4s ease;}
+    .today-label{font-size:0.68rem;color:var(--primary);letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-bottom:10px;}
+
+    /* Event cards */
+    #events-list{padding:0 20px;}
+    .month-header{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;padding:16px 0 8px;display:flex;align-items:center;gap:8px;}
+    .month-header::after{content:'';flex:1;height:1px;background:var(--border);}
+    .event-card{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;animation:fadeUp 0.3s ease both;position:relative;overflow:hidden;}
+    .event-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+    .event-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.3);border-color:rgba(255,255,255,0.14);}
+    .event-emoji{font-size:1.8rem;flex-shrink:0;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:rgba(255,255,255,0.04);}
+    .event-info{flex:1;min-width:0;}
+    .event-name{font-weight:700;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .event-meta{font-size:0.75rem;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .event-badge{background:rgba(255,255,255,0.07);border-radius:6px;padding:2px 7px;font-size:0.68rem;color:var(--muted);font-weight:600;}
+    .zodiac-badge{background:rgba(124,107,255,0.12);color:rgba(180,170,255,0.9);border-radius:6px;padding:2px 7px;font-size:0.68rem;font-weight:600;}
+    .event-days{text-align:right;flex-shrink:0;}
+    .event-days-num{font-weight:800;font-size:1.15rem;line-height:1;}
+    .event-days-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
+    .cat-pill{font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.05em;}
+
+    /* Empty state */
+    #empty-state{text-align:center;padding:60px 24px;display:none;}
+    .empty-icon{font-size:4rem;margin-bottom:16px;animation:pulse 2s infinite;filter:drop-shadow(0 4px 20px rgba(124,107,255,0.4));}
+    .empty-title{font-size:1.1rem;font-weight:700;margin-bottom:8px;}
+    .empty-sub{font-size:0.85rem;color:var(--muted);line-height:1.6;}
+
+    /* FAB */
+    #fab{position:fixed;bottom:32px;right:24px;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-size:1.6rem;display:none;align-items:center;justify-content:center;z-index:40;cursor:pointer;border:none;box-shadow:0 8px 32px rgba(124,107,255,0.45);transition:all 0.2s;animation:glow 3s infinite;}
+    #fab:hover{transform:scale(1.08);}
+
+    /* Modals */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;}
+    .modal-sheet{background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:28px 24px;width:100%;max-width:540px;animation:slideIn 0.3s ease;max-height:90vh;overflow-y:auto;}
+    .modal-handle{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 24px;}
+    .modal-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:6px;}
+    .modal-sub{font-size:0.82rem;color:var(--muted);margin-bottom:24px;}
+    .form-field{margin-bottom:14px;}
+    .form-label{display:block;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+    .form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px 14px;font-size:0.88rem;outline:none;transition:all 0.2s;}
+    .form-input:focus{border-color:rgba(124,107,255,0.5);background:rgba(124,107,255,0.06);}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+    .form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+    .emoji-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .emoji-opt{font-size:1.5rem;padding:8px;border-radius:10px;border:1px solid transparent;background:rgba(255,255,255,0.04);cursor:pointer;transition:all 0.15s;}
+    .emoji-opt.active{border-color:var(--primary);background:rgba(124,107,255,0.15);}
+    .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+    .cat-opt{padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);cursor:pointer;text-align:center;transition:all 0.15s;font-size:0.75rem;color:var(--muted);font-weight:600;}
+    .cat-opt.active{border-color:var(--primary);background:rgba(124,107,255,0.12);color:var(--text);}
+    .cat-opt-icon{font-size:1.3rem;display:block;margin-bottom:4px;}
+    .btn-row{display:flex;gap:10px;margin-top:20px;}
+    .btn-cancel{flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:13px;font-size:0.88rem;cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s;}
+    .btn-save{flex:1.8;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border:none;border-radius:12px;padding:13px;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+    .btn-save:hover{opacity:0.9;transform:translateY(-1px);}
+    .btn-delete{flex:1;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);color:var(--red);border-radius:12px;padding:13px;font-size:0.88rem;cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s;}
+    .range-track{width:100%;accent-color:var(--primary);}
+    .form-error{color:var(--red);font-size:0.8rem;margin-bottom:12px;padding:8px 12px;background:rgba(255,107,107,0.1);border-radius:8px;display:none;}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+    .detail-box{background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px;}
+    .detail-box-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;font-weight:700;}
+    .detail-box-val{font-weight:700;font-size:0.9rem;}
+    .notif-banner{background:linear-gradient(135deg,rgba(255,209,102,0.12),rgba(255,159,67,0.08));border:1px solid rgba(255,209,102,0.25);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin:12px 20px;font-size:0.82rem;cursor:pointer;transition:all 0.2s;}
+    .notif-banner:hover{background:rgba(255,209,102,0.15);}
+    #confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:200;display:none;}
+  </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div style="font-size:3.5rem;filter:drop-shadow(0 4px 24px rgba(124,107,255,0.6));margin-bottom:4px;">🗓️</div>
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:0.85rem;margin-top:8px;">Loading OccasionVault…</div>
+</div>
+
+<div id="confetti-container"></div>
+
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <!-- Left -->
+    <div class="login-left">
+      <div class="login-logo">
+        <div class="login-logo-icon">🗓️</div>
+        <div>
+          <div class="login-logo-name">OccasionVault</div>
+          <div style="font-size:0.68rem;color:var(--muted);">Never Miss a Moment</div>
+        </div>
+      </div>
+      <div class="login-heading" id="login-heading">Welcome back</div>
+      <div class="login-sub" id="login-subheading">Sign in to access all your occasions across every device.</div>
+
+      <div id="login-name-field" class="login-field">
+        <label>Your Name</label>
+        <input class="login-input" id="auth-name" type="text" placeholder="John Doe"/>
+      </div>
+      <div class="login-field">
+        <label>Email Address</label>
+        <input class="login-input" id="auth-email" type="email" placeholder="name@example.com"/>
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input class="login-input" id="auth-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleEmailAuth()"/>
+      </div>
+      <div id="login-error"></div>
+      <button class="login-btn-primary" id="email-auth-btn" onclick="handleEmailAuth()">Sign In</button>
+      <div class="login-divider">or continue with</div>
+      <button class="google-login-btn" onclick="handleGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.7 2.2 30.2 0 24 0 14.7 0 6.7 5.4 2.7 13.4l7.9 6.1C12.5 13.1 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.1z"/><path fill="#FBBC05" d="M10.6 28.5c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.9-6.1C1 15.9 0 19.8 0 24s1 8.1 2.7 11.5l7.9-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.6-5.9c-2 1.4-4.6 2.2-7.6 2.2-6.2 0-11.5-3.6-13.4-9l-7.9 6C6.7 42.6 14.7 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <button class="guest-btn" onclick="handleGuestLogin()">👤 Continue as Guest (data stays on this device)</button>
+      <div class="login-toggle" id="login-toggle-text">
+        Don't have an account? <span onclick="toggleAuthMode(true)">Sign Up</span>
+      </div>
     </div>
-
-    <div id="app" style="display:none;">
-      <div id="header-section" style="padding:38px 28px 26px; animation:fadeIn 0.5s ease; background:rgba(0,0,0,0.1); border-radius:0 0 24px 24px; box-shadow:0 4px 32px #0002;">
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-          <div>
-            <span style="font-size:2.2rem; filter:drop-shadow(0 2px 8px #ff6b6b88)">🎈</span>
-            <div>
-              <div class="shimmer-text" style="font-size:1.7rem; font-weight:bold; letter-spacing:-0.02em;">Birthday Reminder</div>
-              <div id="subtitle" style="font-size:0.82rem; color:#ffc312; margin-top:2px; letter-spacing:0.08em; text-transform:uppercase; font-weight:600; text-shadow:0 1px 8px #0006;">Loading…</div>
-            </div>
-          </div>
-          <div style="display:flex; gap:8px; flex-direction:column; align-items:flex-end;">
-            <button id="auth-btn" class="btn" onclick="openAuthModal()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e8e0d5; border-radius:8px; padding:7px 14px; font-size:0.8rem;">👤 Login</button>
-            <button id="notif-btn" class="btn" onclick="requestNotif()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e8e0d5; border-radius:8px; padding:7px 14px; font-size:0.8rem;">🔔 Enable alerts</button>
-          </div>
-        </div>
-        <div style="margin-top:16px; position:relative;">
-          <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); opacity:0.4; font-size:1.1rem;">🔍</span>
-          <input id="search-input" oninput="renderList()" placeholder="Search people…" style="width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#e8e0d5; border-radius:12px; padding:12px 14px 12px 38px; font-size:1rem; outline:none;" />
-        </div>
-      </div>
-
-      <div id="today-section" style="padding:0 24px 16px; display:none; animation:fadeIn 0.4s ease;">
-        <div style="background:linear-gradient(135deg,rgba(255,107,107,0.15),rgba(255,195,18,0.1)); border:1px solid rgba(255,107,107,0.3); border-radius:16px; padding:16px;">
-          <div style="font-size:0.7rem; color:#ff6b6b; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px;">🎉 Today's Birthdays</div>
-          <div id="today-list"></div>
-        </div>
-      </div>
-
-      <div id="list-section" style="padding:0 24px;">
-        <div id="empty-state" style="text-align:center; padding:40px 20px 40px; display:none;">
-          <div style="font-size:4.5rem; margin-bottom:14px;">🎂🎈</div>
-          <div style="font-size:1.05rem; color:#fff; font-weight:600; text-shadow:0 2px 12px #ff6b6b44; margin-bottom:24px;">No birthdays yet.<br/><span style="color:#ffc312;">Log in to add someone!</span></div>
-          <div id="guest-preview" style="display:none;">
-            <div style="background:linear-gradient(135deg,rgba(255,107,107,0.12),rgba(72,219,251,0.08));border:1px solid rgba(255,107,107,0.2);border-radius:20px;padding:24px;margin-bottom:16px;text-align:left;">
-              <div style="font-size:0.7rem;color:#ff6b6b;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;font-weight:600;">✨ What you can do</div>
-              <div style="display:flex;flex-direction:column;gap:12px;">
-                <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:1.4rem;">🎂</span><div><div style="font-size:0.9rem;font-weight:600;">Never miss a birthday</div><div style="font-size:0.78rem;color:#888;">Get reminders days before</div></div></div>
-                <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:1.4rem;">☁️</span><div><div style="font-size:0.9rem;font-weight:600;">Sync across all devices</div><div style="font-size:0.78rem;color:#888;">Login once, access everywhere</div></div></div>
-                <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:1.4rem;">🔔</span><div><div style="font-size:0.9rem;font-weight:600;">Custom reminder times</div><div style="font-size:0.78rem;color:#888;">Set exact time to be notified</div></div></div>
-                <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:1.4rem;">♑</span><div><div style="font-size:0.9rem;font-weight:600;">Zodiac signs shown</div><div style="font-size:0.78rem;color:#888;">Auto-detected from birthday</div></div></div>
-              </div>
-            </div>
-            <button class="btn" onclick="openAuthModal()" style="width:100%;background:linear-gradient(135deg,#ff6b6b,#ff9f43);color:#fff;padding:14px;font-size:1rem;font-weight:bold;border-radius:14px;margin-bottom:10px;">🚀 Get Started — Login Free</button>
-            <button class="btn" onclick="handleGuestLogin()" style="width:100%;background:rgba(255,255,255,0.05);border:1px dashed rgba(255,255,255,0.15);color:#aaa;padding:11px;font-size:0.85rem;border-radius:12px;">👤 Try as Guest</button>
-          </div>
-        </div>
-        <div id="upcoming-list"></div>
-      </div>
-    </div>
-
-    <button id="fab" onclick="openAdd()" style="display:none;"><span style="font-size:2.2rem;">➕</span></button>
-
-    <!-- ── AUTH MODAL ────────────────────────────────────────── -->
-    <div id="auth-modal" class="modal-overlay" style="display:none;" onclick="closeAuthOnOverlay(event)">
-      <div class="modal-sheet">
-        <div style="text-align:center; margin-bottom:24px;">
-          <div style="font-size:3.5rem; margin-bottom:12px; filter:drop-shadow(0 4px 12px #ff6b6b55);">🔐</div>
-          <div id="auth-title" class="shimmer-text" style="font-size:1.8rem; font-weight:bold; letter-spacing:-0.02em;">Login to Account</div>
-          <div style="font-size:0.85rem; color:#888; margin-top:6px;">Your birthdays sync across all devices</div>
-        </div>
-
-        <!-- Google Sign-In -->
-        <button class="google-btn" onclick="handleGoogleLogin()">
-          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.7 2.2 30.2 0 24 0 14.7 0 6.7 5.4 2.7 13.4l7.9 6.1C12.5 13.1 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.1z"/><path fill="#FBBC05" d="M10.6 28.5c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.9-6.1C1 15.9 0 19.8 0 24s1 8.1 2.7 11.5l7.9-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.6-5.9c-2 1.4-4.6 2.2-7.6 2.2-6.2 0-11.5-3.6-13.4-9l-7.9 6C6.7 42.6 14.7 48 24 48z"/></svg>
-          Continue with Google
-        </button>
-
-        <div class="divider">or use email</div>
-
-        <div id="auth-name-container" style="margin-bottom:12px; display:none;">
-          <label class="label-style">Your Name</label>
-          <input id="auth-name" type="text" placeholder="John Doe" class="input-style" />
-        </div>
-        <div style="margin-bottom:12px;">
-          <label class="label-style">Email Address</label>
-          <input id="auth-email" type="email" placeholder="name@example.com" class="input-style" />
-        </div>
-        <div style="margin-bottom:16px;">
-          <label class="label-style">Password</label>
-          <input id="auth-password" type="password" placeholder="••••••••" class="input-style" onkeydown="if(event.key==='Enter') handleAuthSubmit()" />
-        </div>
-
-        <div id="auth-error" style="color:#ff6b6b; font-size:0.8rem; margin-bottom:12px; display:none;"></div>
-
-        <div style="display:flex; gap:10px; margin-bottom:12px;">
-          <button class="btn" onclick="closeAuthModal()" style="flex:1; background:rgba(255,255,255,0.06); color:#e8e0d5; padding:12px; font-size:0.88rem;">Close</button>
-          <button class="btn" id="auth-submit-btn" onclick="handleAuthSubmit()" style="flex:1.5; background:linear-gradient(135deg,#ff6b6b,#ff9f43); color:#fff; padding:12px; font-size:0.88rem; font-weight:bold;">Login</button>
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <button class="btn" onclick="handleGuestLogin()" style="width:100%; background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.2); color:#aaa; padding:10px; font-size:0.85rem; display:flex; justify-content:center; align-items:center; gap:8px;">
-            👤 Continue as Guest (data won't sync)
-          </button>
-        </div>
-
-        <div id="auth-toggle-container" style="text-align:center; font-size:0.85rem; color:#aaa; margin-top:8px;">
-          Don't have an account? <span class="auth-toggle" onclick="toggleAuthMode(true)">Sign Up</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── DETAIL MODAL ──────────────────────────────────────── -->
-    <div id="detail-modal" class="modal-overlay" style="display:none;" onclick="closeDetailOnOverlay(event)">
-      <div class="modal-sheet">
-        <div style="text-align:center; margin-bottom:24px;">
-          <div id="detail-emoji" style="font-size:3.5rem; margin-bottom:12px; filter:drop-shadow(0 4px 12px #ff6b6b55);"></div>
-          <div id="detail-name" class="shimmer-text" style="font-size:1.8rem; font-weight:bold; letter-spacing:-0.02em;"></div>
-          <div id="detail-date" style="font-size:0.85rem; color:#888; margin-top:6px;"></div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
-          <div style="background:rgba(255,255,255,0.04); border-radius:10px; padding:12px 14px;">
-            <div style="font-size:0.65rem; color:#666; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Days Away</div>
-            <div id="detail-days" style="font-weight:600; font-size:0.95rem;"></div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04); border-radius:10px; padding:12px 14px;">
-            <div style="font-size:0.65rem; color:#666; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Remind Before</div>
-            <div id="detail-remind" style="font-weight:600; font-size:0.95rem;"></div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04); border-radius:10px; padding:12px 14px;">
-            <div style="font-size:0.65rem; color:#666; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Remind At</div>
-            <div id="detail-remind-time" style="font-weight:600; font-size:0.95rem;"></div>
-          </div>
-        </div>
-        <div id="detail-note-wrap" style="background:rgba(255,255,255,0.04); border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:0.85rem; color:#aaa; display:none;"></div>
-        <div style="display:flex; gap:10px;">
-          <button class="btn" onclick="closeDetail()" style="flex:1; background:rgba(255,255,255,0.06); color:#e8e0d5; border-radius:10px; padding:11px; font-size:0.85rem;">Close</button>
-          <button class="btn" id="delete-btn" onclick="deleteSelected()" style="flex:1; background:rgba(255,100,100,0.15); color:#ff6b6b; border-radius:10px; padding:11px; font-size:0.85rem; border:1px solid rgba(255,100,100,0.2);">Delete</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── ADD MODAL ─────────────────────────────────────────── -->
-    <div id="add-modal" class="modal-overlay" style="display:none; overflow-y:auto;" onclick="closeAddOnOverlay(event)">
-      <div class="modal-sheet">
-        <div style="text-align:center; margin-bottom:24px;">
-          <div style="font-size:3.5rem; margin-bottom:12px; filter:drop-shadow(0 4px 12px #ff6b6b55);">🎁</div>
-          <div class="shimmer-text" style="font-size:1.8rem; font-weight:bold; letter-spacing:-0.02em;">Add Birthday</div>
-          <div style="font-size:0.85rem; color:#888; margin-top:6px;">Who are we celebrating next?</div>
-        </div>
-        <div style="margin-bottom:20px;">
-          <label class="label-style" style="text-align:center;">Choose Icon</label>
-          <div id="emoji-picker" style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;"></div>
-        </div>
-        <div style="margin-bottom:12px;">
-          <label class="label-style">Name *</label>
-          <input id="form-name" type="text" placeholder="Person's name" class="input-style" oninput="clearError()" />
-        </div>
-        <div style="margin-bottom:12px;">
-          <label class="label-style">Birth Year (optional)</label>
-          <input id="form-year" type="number" placeholder="e.g. 1990" class="input-style" />
-        </div>
-        <div style="margin-bottom:12px;">
-          <label class="label-style">Note (optional)</label>
-          <input id="form-note" type="text" placeholder="Gift idea, reminder…" class="input-style" />
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-          <div>
-            <label class="label-style">Month</label>
-            <select id="form-month" onchange="updateDayOptions()" style="width:100%; background:#1a1a22; border:1px solid rgba(255,255,255,0.08); color:#e8e0d5; border-radius:10px; padding:10px 12px; font-size:0.88rem; outline:none;"></select>
-          </div>
-          <div>
-            <label class="label-style">Day</label>
-            <select id="form-day" style="width:100%; background:#1a1a22; border:1px solid rgba(255,255,255,0.08); color:#e8e0d5; border-radius:10px; padding:10px 12px; font-size:0.88rem; outline:none;"></select>
-          </div>
-        </div>
-        <div style="margin-bottom:20px;">
-          <label class="label-style" id="remind-label">Remind me — 7 days before</label>
-          <input type="range" id="form-remind" min="1" max="30" value="7" oninput="updateRemindLabel()" style="width:100%; accent-color:#ff6b6b;" />
-          <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#555; margin-top:2px;"><span>1 day</span><span>30 days</span></div>
-        </div>
-        <div style="margin-bottom:20px;">
-          <label class="label-style">Reminder Time (what time to notify you)</label>
-          <input type="time" id="form-remind-time" value="09:00" style="width:100%; background:#1a1a22; border:1px solid rgba(255,255,255,0.08); color:#e8e0d5; border-radius:10px; padding:10px 12px; font-size:0.88rem; outline:none; color-scheme:dark;" />
-        </div>
-        <div id="form-error" style="color:#ff6b6b; font-size:0.8rem; margin-bottom:12px; display:none;"></div>
-        <div style="display:flex; gap:10px;">
-          <button class="btn" onclick="closeAdd()" style="flex:1; background:rgba(255,255,255,0.06); color:#e8e0d5; border-radius:10px; padding:12px; font-size:0.88rem;">Cancel</button>
-          <button class="btn" id="add-submit-btn" onclick="handleAdd()" style="flex:1.5; background:linear-gradient(135deg,#ff6b6b,#ff9f43); color:#fff; border-radius:10px; padding:12px; font-size:0.88rem; font-weight:bold;">Save Birthday</button>
+    <!-- Right -->
+    <div class="login-right">
+      <div class="login-illus">
+        <div class="login-illus-icon">🗓️</div>
+        <div class="login-illus-title">Your Life, Organised</div>
+        <div class="login-illus-desc">Birthdays, anniversaries, events — all in one beautiful place. Never miss what matters.</div>
+        <div class="login-features">
+          <div class="login-feature"><div class="login-feature-icon">🎂</div><div class="login-feature-text"><strong>Birthdays & Anniversaries</strong>Zodiac signs auto-detected</div></div>
+          <div class="login-feature"><div class="login-feature-icon">☁️</div><div class="login-feature-text"><strong>Sync Across All Devices</strong>Login once, everywhere</div></div>
+          <div class="login-feature"><div class="login-feature-icon">🔔</div><div class="login-feature-text"><strong>Smart Reminders</strong>Custom time notifications</div></div>
+          <div class="login-feature"><div class="login-feature-icon">🎉</div><div class="login-feature-text"><strong>All Occasions</strong>Meetings, festivals, health & more</div></div>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- ══════════════════════════════════════════════════════════
-         Firebase SDK (v10 modular loaded as compat for simplicity)
-    ══════════════════════════════════════════════════════════════ -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="app">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-header-top">
+      <div class="app-logo">
+        <div class="app-logo-icon">🗓️</div>
+        <div>
+          <div class="app-logo-text">OccasionVault</div>
+          <div class="app-logo-sub" id="subtitle">0 occasions</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="notif-hdr-btn" class="hdr-btn" onclick="requestNotif()" style="display:none;">🔔 Enable</button>
+        <button id="auth-hdr-btn" class="hdr-btn" onclick="openAuthModal()">👤 Login</button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input id="search-input" oninput="renderList()" placeholder="Search occasions…"/>
+    </div>
+  </div>
 
-    <script>
-      // ════════════════════════════════════════════════════════════
-      //  🔥 FIREBASE CONFIGURATION
-      //  Replace the values below with your own Firebase project's
-      //  config (Firebase Console → Project Settings → Your apps)
-      // ════════════════════════════════════════════════════════════
-      const firebaseConfig = {
-        apiKey:            "AIzaSyDVVBPl9EMTZGUYsMRzigvKcDVQkQBq2-U",
-        authDomain:        "birthday-reminder-630a2.firebaseapp.com",
-        projectId:         "birthday-reminder-630a2",
-        storageBucket:     "birthday-reminder-630a2.firebasestorage.app",
-        messagingSenderId: "20710694139",
-        appId:             "1:20710694139:web:8125398222c068c6fe245e",
-        measurementId:     "G-Q9KEJMGS3Z"
-      };
+  <!-- Notification banner -->
+  <div id="notif-banner" class="notif-banner" onclick="requestNotif()" style="display:none;">
+    <span style="font-size:1.4rem;">🔔</span>
+    <div><strong style="display:block;font-size:0.85rem;">Enable Notifications</strong><span style="color:var(--muted);font-size:0.78rem;">Get reminded before every occasion</span></div>
+    <span style="margin-left:auto;color:var(--muted);">→</span>
+  </div>
 
-      // Detect if config is still placeholder
-      const FIREBASE_CONFIGURED = !firebaseConfig.apiKey.includes("PASTE_YOUR");
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="setFilter('all',this)">🗓 All</button>
+    <button class="filter-tab" onclick="setFilter('birthday',this)">🎂 Birthdays</button>
+    <button class="filter-tab" onclick="setFilter('anniversary',this)">💍 Anniversaries</button>
+    <button class="filter-tab" onclick="setFilter('event',this)">🎉 Events</button>
+    <button class="filter-tab" onclick="setFilter('work',this)">💼 Work</button>
+    <button class="filter-tab" onclick="setFilter('health',this)">🏥 Health</button>
+    <button class="filter-tab" onclick="setFilter('travel',this)">✈️ Travel</button>
+    <button class="filter-tab" onclick="setFilter('finance',this)">💰 Finance</button>
+  </div>
 
-      let app, auth, db, unsubscribeListener = null;
+  <!-- Today section -->
+  <div id="today-section">
+    <div class="today-label">🎉 Happening Today</div>
+    <div id="today-list"></div>
+  </div>
 
-      if (FIREBASE_CONFIGURED) {
-        app  = firebase.initializeApp(firebaseConfig);
-        auth = firebase.auth();
-        db   = firebase.firestore();
-        // Enable offline persistence so the app works without internet
-        db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
-      }
+  <!-- Events list -->
+  <div id="events-list">
+    <div id="empty-state">
+      <div class="empty-icon">🗓️</div>
+      <div class="empty-title">No occasions yet</div>
+      <div class="empty-sub">Tap the + button to add a birthday,<br/>anniversary, event or any occasion!</div>
+    </div>
+    <div id="upcoming-list"></div>
+  </div>
+</div>
 
-      // ════════════════════════════════════════════════════════════
-      //  Constants & state
-      // ════════════════════════════════════════════════════════════
-      const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      const DAYS_IN_MONTH = [31,29,31,30,31,30,31,31,30,31,30,31];
-      const EMOJIS = ["🎂","🎉","🎈","🎁","💐","🌟","❤️","🦋","🌈","🍰"];
+<button id="fab" onclick="openAddModal()">＋</button>
 
-      // Fallback local storage key (used for guest mode only)
-      const GUEST_KEY  = "birthday-reminder-guest-data";
-      const GUEST_AUTH = "birthday-reminder-guest-session";
+<!-- ══════════ ADD MODAL ══════════ -->
+<div id="add-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeAddModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add Occasion</div>
+    <div class="modal-sub">What would you like to remember?</div>
 
-      let birthdays      = [];
-      let currentUser    = null;   // Firebase User object or guest object
-      let isGuest        = false;
-      let selectedId     = null;
-      let selectedEmoji  = "🎂";
-      let notifGranted   = false;
-      let isSignUpMode   = false;
+    <!-- Category -->
+    <div class="form-field">
+      <label class="form-label">Category</label>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
 
-      // ════════════════════════════════════════════════════════════
-      //  Utility helpers
-      // ════════════════════════════════════════════════════════════
-      function getDaysUntil(month, day) {
-        const today = new Date(); today.setHours(0,0,0,0);
-        let next = new Date(today.getFullYear(), month - 1, day);
-        if (next < today) next = new Date(today.getFullYear() + 1, month - 1, day);
-        return Math.ceil((next - today) / 86400000);
-      }
-      function getAge(year, month, day) {
-        if (!year) return null;
-        const t = new Date(); let age = t.getFullYear() - year;
-        if (t.getMonth()+1 < month || (t.getMonth()+1===month && t.getDate()<day)) age--;
-        return age;
-      }
-      function getUpcomingAge(year, month, day) {
-        if (!year) return null;
-        const today = new Date(); today.setHours(0,0,0,0);
-        let next = new Date(today.getFullYear(), month-1, day);
-        if (next < today) next = new Date(today.getFullYear()+1, month-1, day);
-        return next.getFullYear() - year;
-      }
-      function formatTime(t) {
-        if (!t) return "9:00 AM";
-        const [h,m] = t.split(":").map(Number);
-        const ampm = h >= 12 ? "PM" : "AM";
-        const hour = h % 12 || 12;
-        return `${hour}:${String(m).padStart(2,"0")} ${ampm}`;
-      }
-      function categoryColor(days) {
-        if (days===0) return "#FF6B6B"; if (days<=3) return "#FF9F43";
-        if (days<=7) return "#FFC312";  if (days<=30) return "#A3CB38";
-        return "#48dbfb";
-      }
-      function zodiacSign(month, day) {
-        const s=[
-          {sym:"♑",name:"Capricorn",e:[1,19]},{sym:"♒",name:"Aquarius",e:[2,18]},
-          {sym:"♓",name:"Pisces",e:[3,20]},{sym:"♈",name:"Aries",e:[4,19]},
-          {sym:"♉",name:"Taurus",e:[5,20]},{sym:"♊",name:"Gemini",e:[6,20]},
-          {sym:"♋",name:"Cancer",e:[7,22]},{sym:"♌",name:"Leo",e:[8,22]},
-          {sym:"♍",name:"Virgo",e:[9,22]},{sym:"♎",name:"Libra",e:[10,22]},
-          {sym:"♏",name:"Scorpio",e:[11,21]},{sym:"♐",name:"Sagittarius",e:[12,21]},
-          {sym:"♑",name:"Capricorn",e:[12,31]}
-        ];
-        for(const x of s) if(month<x.e[0]||(month===x.e[0]&&day<=x.e[1])) return {sym:x.sym,name:x.name};
-        return null;
-      }
+    <!-- Emoji -->
+    <div class="form-field">
+      <label class="form-label">Icon</label>
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
 
-      // ════════════════════════════════════════════════════════════
-      //  Firebase Auth observers
-      // ════════════════════════════════════════════════════════════
-      function initAuth() {
-        if (!FIREBASE_CONFIGURED) {
-          // Firebase not configured: check if guest session exists
-          const g = localStorage.getItem(GUEST_AUTH);
-          if (g) { isGuest = true; currentUser = JSON.parse(g); }
-          hideLoading();
-          updateAuthUI();
-          loadBirthdays();
-          return;
-        }
+    <!-- Name -->
+    <div class="form-field">
+      <label class="form-label">Name / Title *</label>
+      <input class="form-input" id="form-name" type="text" placeholder="e.g. Mom's Birthday, Work Meeting…" oninput="clearFormError()"/>
+    </div>
 
-        auth.onAuthStateChanged(user => {
-          // Cancel any previous Firestore listener
-          if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
+    <!-- Note -->
+    <div class="form-field">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" id="form-note" type="text" placeholder="Gift idea, reminder, details…"/>
+    </div>
 
-          if (user) {
-            isGuest    = false;
-            currentUser = user;
-            hideLoading();
-            updateAuthUI();
-            subscribeToFirestore(user.uid);
-          } else {
-            // Not signed in with Firebase; check guest session
-            const g = localStorage.getItem(GUEST_AUTH);
-            if (g) { isGuest = true; currentUser = JSON.parse(g); }
-            else   { isGuest = false; currentUser = null; }
-            birthdays = isGuest ? (JSON.parse(localStorage.getItem(GUEST_KEY) || "[]")) : [];
-            hideLoading();
-            updateAuthUI();
-            renderList();
-          }
-        });
-      }
+    <!-- Year (only for birthday/anniversary) -->
+    <div class="form-field" id="year-field">
+      <label class="form-label">Year (optional)</label>
+      <input class="form-input" id="form-year" type="number" placeholder="e.g. 1995"/>
+    </div>
 
-      // Real-time Firestore listener — updates UI whenever cloud data changes
-      function subscribeToFirestore(uid) {
-        unsubscribeListener = db.collection("users").doc(uid)
-          .collection("birthdays")
-          .onSnapshot(snapshot => {
-            birthdays = [];
-            snapshot.forEach(doc => birthdays.push({ id: doc.id, ...doc.data() }));
-            birthdays.sort((a,b) => a.month!==b.month ? a.month-b.month : a.day-b.day);
-            renderList();
-            checkAndFireDailyNotifications();
-          }, err => console.error("Firestore error:", err));
-      }
+    <!-- Recurring toggle -->
+    <div class="form-field" style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:12px 16px;">
+      <div>
+        <div style="font-size:0.85rem;font-weight:600;">Yearly Recurring</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Repeats every year</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+        <input type="checkbox" id="form-recurring" checked style="opacity:0;width:0;height:0;"/>
+        <span id="toggle-track" style="position:absolute;inset:0;background:#333;border-radius:12px;transition:0.2s;" onclick="toggleRecurring()"></span>
+        <span id="toggle-thumb" style="position:absolute;left:2px;top:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.2s;pointer-events:none;"></span>
+      </label>
+    </div>
 
-      // ════════════════════════════════════════════════════════════
-      //  Auth actions
-      // ════════════════════════════════════════════════════════════
-      async function handleGoogleLogin() {
-        if (!FIREBASE_CONFIGURED) { showConfigWarning(); return; }
-        const provider = new firebase.auth.GoogleAuthProvider();
-        try {
-          await auth.signInWithPopup(provider);
-          // onAuthStateChanged will handle the rest
-          closeAuthModal();
-          showConfetti();
-        } catch(e) {
-          document.getElementById("auth-error").textContent = "⚠ Google sign-in failed: " + e.message;
-          document.getElementById("auth-error").style.display = "block";
-        }
-      }
+    <!-- Date -->
+    <div class="form-row" style="margin-top:14px;">
+      <div>
+        <label class="form-label">Month</label>
+        <select class="form-input" id="form-month" onchange="updateDays()" style="background:#1a1a2e;"></select>
+      </div>
+      <div>
+        <label class="form-label">Day</label>
+        <select class="form-input" id="form-day" style="background:#1a1a2e;"></select>
+      </div>
+    </div>
 
-      async function handleAuthSubmit() {
-        const name     = document.getElementById("auth-name").value.trim();
-        const email    = document.getElementById("auth-email").value.trim();
-        const password = document.getElementById("auth-password").value.trim();
-        const errorEl  = document.getElementById("auth-error");
+    <!-- One-time date picker -->
+    <div id="full-date-field" style="display:none;margin-bottom:14px;">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="form-fulldate" type="date" style="background:#1a1a2e;color-scheme:dark;"/>
+    </div>
 
-        if (isSignUpMode && !name)     { errorEl.textContent="⚠ Name is required."; errorEl.style.display="block"; return; }
-        if (!email || !password)       { errorEl.textContent="⚠ Email and password are required."; errorEl.style.display="block"; return; }
+    <!-- Reminder -->
+    <div class="form-row">
+      <div>
+        <label class="form-label" id="remind-days-label">Remind — 7 days before</label>
+        <input type="range" class="range-track" id="form-remind" min="1" max="30" value="7" oninput="updateRemindLabel()" style="width:100%;margin-top:8px;"/>
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-top:2px;"><span>1d</span><span>30d</span></div>
+      </div>
+      <div>
+        <label class="form-label">Remind At</label>
+        <input class="form-input" id="form-remind-time" type="time" value="09:00" style="background:#1a1a2e;color-scheme:dark;"/>
+      </div>
+    </div>
 
-        const submitBtn = document.getElementById("auth-submit-btn");
-        submitBtn.textContent = "Please wait…"; submitBtn.disabled = true;
+    <div class="form-error" id="form-error"></div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-save" id="save-btn" onclick="handleSave()">Save Occasion</button>
+    </div>
+  </div>
+</div>
 
-        try {
-          if (!FIREBASE_CONFIGURED) {
-            // Offline fallback: simple localStorage-based email+password mock
-            // (works on one device only — prompts user to configure Firebase)
-            showConfigWarning();
-            submitBtn.textContent = isSignUpMode ? "Sign Up" : "Login"; submitBtn.disabled = false;
-            return;
-          }
+<!-- ══════════ DETAIL MODAL ══════════ -->
+<div id="detail-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div id="d-emoji" style="font-size:3.5rem;margin-bottom:10px;filter:drop-shadow(0 4px 16px rgba(124,107,255,0.4));"></div>
+      <div id="d-name" style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;"></div>
+      <div id="d-date" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
+      <div id="d-zodiac" style="display:none;margin-top:8px;"></div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-box"><div class="detail-box-label">Days Away</div><div class="detail-box-val" id="d-days"></div></div>
+      <div class="detail-box"><div class="detail-box-label">Category</div><div class="detail-box-val" id="d-cat"></div></div>
+      <div class="detail-box"><div class="detail-box-label">Remind Before</div><div class="detail-box-val" id="d-remind"></div></div>
+      <div class="detail-box"><div class="detail-box-label">Notify At</div><div class="detail-box-val" id="d-time"></div></div>
+    </div>
+    <div id="d-note" style="display:none;background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:0.85rem;color:var(--muted);"></div>
+    <div class="btn-row">
+      <button class="btn-delete" onclick="deleteSelected()">Delete</button>
+      <button class="btn-cancel" style="flex:1.5;" onclick="closeDetail()">Close</button>
+    </div>
+  </div>
+</div>
 
-          if (isSignUpMode) {
-            const cred = await auth.createUserWithEmailAndPassword(email, password);
-            await cred.user.updateProfile({ displayName: name });
-          } else {
-            await auth.signInWithEmailAndPassword(email, password);
-          }
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-          submitBtn.textContent = "Success!";
-          submitBtn.classList.add("glowing-btn");
-          const sheet = document.querySelector("#auth-modal .modal-sheet");
-          sheet.classList.add("blow-away");
-          setTimeout(() => {
-            closeAuthModal(); showConfetti();
-            sheet.classList.remove("blow-away");
-            submitBtn.classList.remove("glowing-btn");
-            submitBtn.textContent = isSignUpMode ? "Sign Up" : "Login";
-            submitBtn.disabled = false;
-          }, 450);
+<script>
+// ═══════════════════════════════════════════════
+//  CONFIG — your real Firebase keys
+// ═══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyDVVBPl9EMTZGUYsMRzigvKcDVQkQBq2-U",
+  authDomain:        "birthday-reminder-630a2.firebaseapp.com",
+  projectId:         "birthday-reminder-630a2",
+  storageBucket:     "birthday-reminder-630a2.firebasestorage.app",
+  messagingSenderId: "20710694139",
+  appId:             "1:20710694139:web:8125398222c068c6fe245e",
+  measurementId:     "G-Q9KEJMGS3Z"
+};
 
-        } catch(e) {
-          const msg = {
-            "auth/user-not-found":      "No account found with this email.",
-            "auth/wrong-password":       "Incorrect password.",
-            "auth/email-already-in-use": "This email is already registered.",
-            "auth/weak-password":        "Password should be at least 6 characters.",
-            "auth/invalid-email":        "Please enter a valid email address.",
-            "auth/invalid-credential":   "Invalid email or password.",
-          }[e.code] || e.message;
-          errorEl.textContent = "⚠ " + msg; errorEl.style.display = "block";
-          submitBtn.textContent = isSignUpMode ? "Sign Up" : "Login"; submitBtn.disabled = false;
-        }
-      }
+// ═══════════════════════════════════════════════
+//  DATA & STATE
+// ═══════════════════════════════════════════════
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAYS_IN_MONTH = [31,29,31,30,31,30,31,31,30,31,30,31];
+const GUEST_KEY  = "occasionvault-guest";
+const GUEST_AUTH = "occasionvault-guest-session";
 
-      function handleGuestLogin() {
-        isGuest = true;
-        currentUser = { displayName: "Guest", email: null };
-        localStorage.setItem(GUEST_AUTH, JSON.stringify(currentUser));
-        birthdays = JSON.parse(localStorage.getItem(GUEST_KEY) || "[]");
+const CATEGORIES = [
+  {id:"birthday",  label:"Birthday",    icon:"🎂", color:"#ff6b6b"},
+  {id:"anniversary",label:"Anniversary",icon:"💍", color:"#ff6b9d"},
+  {id:"event",     label:"Event",       icon:"🎉", color:"#7c6bff"},
+  {id:"work",      label:"Work",        icon:"💼", color:"#48dbfb"},
+  {id:"health",    label:"Health",      icon:"🏥", color:"#06d6a0"},
+  {id:"travel",    label:"Travel",      icon:"✈️", color:"#ffd166"},
+  {id:"finance",   label:"Finance",     icon:"💰", color:"#ff9f43"},
+  {id:"festival",  label:"Festival",    icon:"🪔", color:"#ffc312"},
+  {id:"other",     label:"Other",       icon:"📌", color:"#8884aa"},
+];
 
-        const sheet = document.querySelector("#auth-modal .modal-sheet");
-        sheet.classList.add("blow-away");
-        setTimeout(() => {
-          closeAuthModal(); updateAuthUI(); renderList(); showConfetti();
-          sheet.classList.remove("blow-away");
-        }, 450);
-      }
+const EMOJIS_BY_CAT = {
+  birthday:    ["🎂","🎈","🎁","🥳","🎊","🌟","💝","🍰"],
+  anniversary: ["💍","❤️","🌹","💑","🥂","✨","💞","🎶"],
+  event:       ["🎉","🎊","🥳","🎤","🎭","🏆","🎪","🎟"],
+  work:        ["💼","📅","📊","💡","🖥️","📝","🤝","⏰"],
+  health:      ["🏥","💊","🩺","🏃","🧘","💪","🩻","🌿"],
+  travel:      ["✈️","🧳","🗺️","🏖️","⛰️","🚂","🛳️","🗼"],
+  finance:     ["💰","💳","🏦","📈","💸","🧾","🔐","💹"],
+  festival:    ["🪔","🎆","🎇","🎑","🌙","⭐","🎐","🏮"],
+  other:       ["📌","🔖","📆","⏰","🗓️","📣","🔔","💬"],
+};
 
-      async function handleLogout() {
-        if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
-        if (FIREBASE_CONFIGURED && !isGuest) await auth.signOut();
-        localStorage.removeItem(GUEST_AUTH);
-        isGuest = false; currentUser = null; birthdays = [];
-        updateAuthUI(); renderList();
-      }
+const ZODIAC = [
+  {sym:"♑",name:"Capricorn",e:[1,19]},{sym:"♒",name:"Aquarius",e:[2,18]},
+  {sym:"♓",name:"Pisces",e:[3,20]},{sym:"♈",name:"Aries",e:[4,19]},
+  {sym:"♉",name:"Taurus",e:[5,20]},{sym:"♊",name:"Gemini",e:[6,20]},
+  {sym:"♋",name:"Cancer",e:[7,22]},{sym:"♌",name:"Leo",e:[8,22]},
+  {sym:"♍",name:"Virgo",e:[9,22]},{sym:"♎",name:"Libra",e:[10,22]},
+  {sym:"♏",name:"Scorpio",e:[11,21]},{sym:"♐",name:"Sagittarius",e:[12,21]},
+  {sym:"♑",name:"Capricorn",e:[12,31]}
+];
 
-      // ════════════════════════════════════════════════════════════
-      //  Firestore CRUD helpers
-      // ════════════════════════════════════════════════════════════
-      function getUserBirthdaysRef() {
-        return db.collection("users").doc(currentUser.uid).collection("birthdays");
-      }
+let occasions = [], currentUser = null, isGuest = false;
+let selectedId = null, activeFilter = "all";
+let selectedCat = "birthday", selectedEmoji = "🎂";
+let isRecurring = true, isSignUpMode = false;
+let notifGranted = false, unsubFn = null;
+let app, auth, db;
 
-      async function firestoreAdd(entry) {
-        const { id, ...data } = entry;
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Request timed out. Check Firestore is created in Firebase Console.")), 10000)
-        );
-        await Promise.race([
-          getUserBirthdaysRef().doc(String(entry.id)).set(data),
-          timeoutPromise
-        ]);
-      }
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+function getZodiac(month, day) {
+  for (const z of ZODIAC)
+    if (month < z.e[0] || (month === z.e[0] && day <= z.e[1])) return z;
+  return null;
+}
+function getDaysUntil(month, day, recurring, fullDate) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  if (!recurring && fullDate) {
+    const d = new Date(fullDate); d.setHours(0,0,0,0);
+    const diff = Math.ceil((d - today) / 86400000);
+    return diff < 0 ? null : diff;
+  }
+  let next = new Date(today.getFullYear(), month-1, day);
+  if (next < today) next = new Date(today.getFullYear()+1, month-1, day);
+  return Math.ceil((next - today) / 86400000);
+}
+function getAge(year, month, day) {
+  if (!year) return null;
+  const t = new Date(); let age = t.getFullYear() - year;
+  if (t.getMonth()+1 < month || (t.getMonth()+1===month && t.getDate()<day)) age--;
+  return age;
+}
+function getUpcomingAge(year, month, day) {
+  if (!year) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  let next = new Date(today.getFullYear(), month-1, day);
+  if (next < today) next = new Date(today.getFullYear()+1, month-1, day);
+  return next.getFullYear() - year;
+}
+function catColor(id) { return CATEGORIES.find(c=>c.id===id)?.color || "#8884aa"; }
+function catIcon(id)  { return CATEGORIES.find(c=>c.id===id)?.icon  || "📌"; }
+function catLabel(id) { return CATEGORIES.find(c=>c.id===id)?.label || id; }
+function daysColor(d) {
+  if (d===0) return "#ff6b6b"; if (d<=3) return "#ff9f43";
+  if (d<=7) return "#ffd166";  if (d<=30) return "#06d6a0";
+  return "#7c6bff";
+}
+function formatTime(t) {
+  if (!t) return "9:00 AM";
+  const [h,m] = t.split(":").map(Number);
+  return `${h%12||12}:${String(m).padStart(2,"0")} ${h>=12?"PM":"AM"}`;
+}
+function sortOccasions(list) {
+  return [...list].sort((a,b) => {
+    const da = getDaysUntil(a.month,a.day,a.recurring,a.fullDate);
+    const db_ = getDaysUntil(b.month,b.day,b.recurring,b.fullDate);
+    if (da===null && db_===null) return 0;
+    if (da===null) return 1; if (db_===null) return -1;
+    if (da !== db_) return da - db_;
+    return a.month !== b.month ? a.month - b.month : a.day - b.day;
+  });
+}
 
-      async function firestoreDelete(id) {
-        await getUserBirthdaysRef().doc(String(id)).delete();
-      }
+// ═══════════════════════════════════════════════
+//  NOTIFICATIONS — properly working
+// ═══════════════════════════════════════════════
+async function requestNotif() {
+  if (!("Notification" in window)) {
+    alert("Your browser does not support notifications.");
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  notifGranted = perm === "granted";
+  document.getElementById("notif-hdr-btn").style.display = notifGranted ? "none" : "inline-block";
+  document.getElementById("notif-banner").style.display  = notifGranted ? "none" : "flex";
+  if (notifGranted) {
+    // Show test notification immediately so user knows it works
+    new Notification("🔔 OccasionVault", {
+      body: "Notifications enabled! You'll never miss an occasion.",
+      icon: "https://placehold.co/192x192/7c6bff/ffffff?text=OV"
+    });
+    checkNotifications();
+  }
+}
 
-      // ════════════════════════════════════════════════════════════
-      //  Birthday CRUD (routes to Firestore or localStorage)
-      // ════════════════════════════════════════════════════════════
-      function loadBirthdays() {
-        // For Firebase users, data comes via real-time listener (subscribeToFirestore)
-        // For guests, data comes from localStorage
-        if (isGuest) {
-          birthdays = JSON.parse(localStorage.getItem(GUEST_KEY) || "[]");
-          birthdays.sort((a,b) => a.month!==b.month ? a.month-b.month : a.day-b.day);
-          renderList();
-          checkAndFireDailyNotifications();
-        }
-      }
+function checkNotifications() {
+  if (!notifGranted || occasions.length === 0) return;
+  const uid = currentUser ? (currentUser.uid || currentUser.email || "guest") : "guest";
+  const todayKey = new Date().toDateString() + "_" + uid;
+  if (localStorage.getItem("ov-notified") === todayKey) return;
 
-      async function saveBirthday(entry) {
-        if (isGuest || !FIREBASE_CONFIGURED) {
-          birthdays.push(entry);
-          birthdays.sort((a,b) => a.month!==b.month ? a.month-b.month : a.day-b.day);
-          localStorage.setItem(GUEST_KEY, JSON.stringify(birthdays));
-          renderList();
-        } else {
-          // Firestore: the real-time listener will update the UI automatically
-          await firestoreAdd(entry);
-        }
-      }
+  occasions.forEach(o => {
+    const days = getDaysUntil(o.month, o.day, o.recurring, o.fullDate);
+    if (days === null) return;
+    if (days === 0) {
+      new Notification(`${o.emoji} Today: ${o.name}!`, {
+        body: o.note || `${catLabel(o.cat)} — Don't forget!`,
+        icon: "https://placehold.co/192x192/7c6bff/ffffff?text=OV",
+        tag: `ov-${o.id}`
+      });
+    } else if (days === parseInt(o.remind || 7)) {
+      new Notification(`${o.emoji} ${o.name} in ${days} days`, {
+        body: `${MONTHS_SHORT[o.month-1]} ${o.day} · ${catLabel(o.cat)}`,
+        icon: "https://placehold.co/192x192/7c6bff/ffffff?text=OV",
+        tag: `ov-${o.id}`
+      });
+    }
+  });
+  localStorage.setItem("ov-notified", todayKey);
+}
 
-      async function deleteBirthday(id) {
-        if (isGuest || !FIREBASE_CONFIGURED) {
-          birthdays = birthdays.filter(b => b.id !== id);
-          localStorage.setItem(GUEST_KEY, JSON.stringify(birthdays));
-          renderList();
-        } else {
-          await firestoreDelete(id);
-        }
-      }
+// ═══════════════════════════════════════════════
+//  FIREBASE INIT & AUTH
+// ═══════════════════════════════════════════════
+function initApp() {
+  try {
+    app  = firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db   = firebase.firestore();
+    db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+  } catch(e) { console.warn("Firebase init failed:", e); }
 
-      // ════════════════════════════════════════════════════════════
-      //  Auth UI helpers
-      // ════════════════════════════════════════════════════════════
-      function updateAuthUI() {
-        const authBtn = document.getElementById("auth-btn");
-        const fabBtn  = document.getElementById("fab");
-        const appEl   = document.getElementById("app");
-        appEl.style.display = "block";
+  // Check notification permission
+  if ("Notification" in window && Notification.permission === "granted") {
+    notifGranted = true;
+  }
 
-        const previewEl = document.getElementById("guest-preview");
-        if (currentUser) {
-          const name = currentUser.displayName || currentUser.email || "User";
-          authBtn.textContent = `🚪 Logout (${name.split(" ")[0]})`;
-          authBtn.onclick = handleLogout;
-          authBtn.style.background = "rgba(255,100,100,0.1)";
-          authBtn.style.color = "#FF6B6B";
-          fabBtn.style.display = "flex";
-          if (previewEl) previewEl.style.display = "none";
-        } else {
-          authBtn.textContent = "👤 Login";
-          authBtn.onclick = openAuthModal;
-          authBtn.style.background = "rgba(255,255,255,0.06)";
-          authBtn.style.color = "#e8e0d5";
-          fabBtn.style.display = "none";
-          if (previewEl) previewEl.style.display = "block";
-        }
-      }
+  auth.onAuthStateChanged(user => {
+    if (unsubFn) { unsubFn(); unsubFn = null; }
+    if (user) {
+      isGuest = false; currentUser = user;
+      localStorage.removeItem(GUEST_AUTH);
+      hideLoading(); showApp();
+      subscribeFirestore(user.uid);
+    } else {
+      const g = localStorage.getItem(GUEST_AUTH);
+      if (g) { isGuest = true; currentUser = JSON.parse(g); occasions = JSON.parse(localStorage.getItem(GUEST_KEY)||"[]"); hideLoading(); showApp(); renderList(); checkNotifications(); }
+      else { hideLoading(); showLoginScreen(); }
+    }
+  });
+}
 
-      function openAuthModal() {
-        toggleAuthMode(false);
-        document.getElementById("auth-name").value = "";
-        document.getElementById("auth-email").value = "";
-        document.getElementById("auth-password").value = "";
-        document.getElementById("auth-error").style.display = "none";
-        document.getElementById("auth-modal").style.display = "flex";
-        document.getElementById("fab").style.display = "none";
-      }
-      function closeAuthModal() {
-        document.getElementById("auth-modal").style.display = "none";
-        if (currentUser) document.getElementById("fab").style.display = "flex";
-      }
-      function closeAuthOnOverlay(e) { if (e.target===e.currentTarget) closeAuthModal(); }
-      function toggleAuthMode(signUp) {
-        isSignUpMode = signUp;
-        document.getElementById("auth-title").textContent = signUp ? "Create Account" : "Login to Account";
-        document.getElementById("auth-submit-btn").textContent = signUp ? "Sign Up" : "Login";
-        document.getElementById("auth-name-container").style.display = signUp ? "block" : "none";
-        document.getElementById("auth-toggle-container").innerHTML = signUp
-          ? 'Already have an account? <span class="auth-toggle" onclick="toggleAuthMode(false)">Login</span>'
-          : 'Don\'t have an account? <span class="auth-toggle" onclick="toggleAuthMode(true)">Sign Up</span>';
-      }
+function subscribeFirestore(uid) {
+  unsubFn = db.collection("users").doc(uid).collection("occasions")
+    .onSnapshot(snap => {
+      occasions = [];
+      snap.forEach(d => occasions.push({id:d.id,...d.data()}));
+      renderList(); checkNotifications();
+    }, err => console.error("Firestore:", err));
+}
 
-      // ════════════════════════════════════════════════════════════
-      //  Loading overlay
-      // ════════════════════════════════════════════════════════════
-      function hideLoading() {
-        document.getElementById("loading-overlay").style.display = "none";
-      }
+function hideLoading() { document.getElementById("loading-overlay").style.display = "none"; }
+function showLoginScreen() {
+  document.getElementById("login-screen").style.display = "block";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("fab").style.display = "none";
+}
+function showApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  document.getElementById("fab").style.display = "flex";
+  updateHeaderAuth();
+  // Show notif banner if not granted
+  document.getElementById("notif-banner").style.display = notifGranted ? "none" : "flex";
+  document.getElementById("notif-hdr-btn").style.display = notifGranted ? "none" : "inline-block";
+}
+function updateHeaderAuth() {
+  const btn = document.getElementById("auth-hdr-btn");
+  if (currentUser) {
+    const name = currentUser.displayName || currentUser.email || "User";
+    btn.textContent = `🚪 ${name.split(" ")[0]}`;
+    btn.classList.add("danger");
+    btn.onclick = handleLogout;
+  } else {
+    btn.textContent = "👤 Login";
+    btn.classList.remove("danger");
+    btn.onclick = showLoginScreen;
+  }
+}
 
-      // ════════════════════════════════════════════════════════════
-      //  Config warning (shown when Firebase keys are placeholders)
-      // ════════════════════════════════════════════════════════════
-      function showConfigWarning() {
-        document.getElementById("auth-error").innerHTML =
-          `⚠ Firebase not configured yet.<br>
-           <small style="color:#aaa;">Open the HTML file, find <code>firebaseConfig</code> and paste your real keys from the Firebase Console.<br>
-           <a href="https://console.firebase.google.com" target="_blank" style="color:#48dbfb;">Open Firebase Console →</a></small>`;
-        document.getElementById("auth-error").style.display = "block";
-      }
+// ═══════════════════════════════════════════════
+//  AUTH ACTIONS
+// ═══════════════════════════════════════════════
+async function handleGoogleLogin() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    await auth.signInWithPopup(provider);
+  } catch(e) {
+    showLoginError("Google sign-in failed: " + (e.message||e.code));
+  }
+}
 
-      // ════════════════════════════════════════════════════════════
-      //  Confetti
-      // ════════════════════════════════════════════════════════════
-      function showConfetti() {
-        const container = document.getElementById("confetti-container");
-        container.innerHTML = ""; container.style.display = "block";
-        const colors = ["#FF6B6B","#FFC312","#48dbfb","#A3CB38","#FF9F43","#f368e0"];
-        for(let i=0;i<18;i++){
-          const el = document.createElement("div"); const size=8+Math.random()*8; const delay=Math.random()*0.6;
-          el.style.cssText=`position:absolute;left:${Math.random()*100}%;top:-20px;width:${size}px;height:${size}px;background:${colors[i%6]};border-radius:${Math.random()>.5?"50%":"2px"};animation:fall 1.8s ${delay}s ease-in forwards;`;
-          container.appendChild(el);
-        }
-        setTimeout(() => { container.style.display="none"; container.innerHTML=""; }, 2600);
-      }
+async function handleEmailAuth() {
+  const name  = document.getElementById("auth-name").value.trim();
+  const email = document.getElementById("auth-email").value.trim();
+  const pass  = document.getElementById("auth-password").value;
+  const btn   = document.getElementById("email-auth-btn");
+  if (isSignUpMode && !name) { showLoginError("Name is required"); return; }
+  if (!email || !pass) { showLoginError("Email and password are required"); return; }
+  btn.textContent = "Please wait…"; btn.disabled = true;
+  try {
+    if (isSignUpMode) {
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await cred.user.updateProfile({displayName: name});
+    } else {
+      await auth.signInWithEmailAndPassword(email, pass);
+    }
+  } catch(e) {
+    const msgs = {"auth/user-not-found":"No account with this email.","auth/wrong-password":"Incorrect password.","auth/email-already-in-use":"Email already registered.","auth/weak-password":"Password must be 6+ characters.","auth/invalid-credential":"Invalid email or password."};
+    showLoginError(msgs[e.code] || e.message);
+    btn.textContent = isSignUpMode ? "Sign Up" : "Sign In"; btn.disabled = false;
+  }
+}
 
-      // ════════════════════════════════════════════════════════════
-      //  Notifications
-      // ════════════════════════════════════════════════════════════
-      async function requestNotif() {
-        if ("Notification" in window) {
-          const p = await Notification.requestPermission();
-          notifGranted = p === "granted";
-          if (notifGranted) { document.getElementById("notif-btn").style.display="none"; checkAndFireDailyNotifications(); }
-        }
-      }
-      function scheduleNotifications(list) {
-        if (!notifGranted) return;
-        list.forEach(b => {
-          const days = getDaysUntil(b.month, b.day);
-          if (days===0)        new Notification(`🎂 Today is ${b.name}'s Birthday!`, { body: b.note || "Don't forget to wish them!" });
-          else if(days===b.remind) new Notification(`🎁 ${b.name}'s birthday in ${days} days!`, { body:`${MONTHS[b.month-1]} ${b.day}` });
-        });
-      }
-      function checkAndFireDailyNotifications() {
-        if (!notifGranted || birthdays.length===0) return;
-        const uid = currentUser ? (currentUser.uid || currentUser.email || "guest") : "guest";
-        const todayStr = new Date().toDateString() + "_" + uid;
-        if (localStorage.getItem("birthday-last-notified")===todayStr) return;
-        scheduleNotifications(birthdays);
-        localStorage.setItem("birthday-last-notified", todayStr);
-      }
+function handleGuestLogin() {
+  isGuest = true; currentUser = {displayName:"Guest",email:null};
+  localStorage.setItem(GUEST_AUTH, JSON.stringify(currentUser));
+  occasions = JSON.parse(localStorage.getItem(GUEST_KEY)||"[]");
+  showApp(); renderList();
+}
 
-      // ════════════════════════════════════════════════════════════
-      //  Render
-      // ════════════════════════════════════════════════════════════
-      function renderList() {
-        const search   = document.getElementById("search-input").value.toLowerCase();
-        const filtered = birthdays.filter(b => b.name.toLowerCase().includes(search));
-        const todayB   = filtered.filter(b => getDaysUntil(b.month,b.day)===0);
-        const upcoming = filtered.filter(b => getDaysUntil(b.month,b.day)>0);
+async function handleLogout() {
+  if (unsubFn) { unsubFn(); unsubFn = null; }
+  try { await auth.signOut(); } catch(e){}
+  localStorage.removeItem(GUEST_AUTH);
+  isGuest = false; currentUser = null; occasions = [];
+  showLoginScreen();
+}
 
-        document.getElementById("subtitle").textContent =
-          `${birthdays.length} person${birthdays.length!==1?"s":""} remembered` +
-          (isGuest ? " (guest)" : currentUser ? " ☁" : "");
+function toggleAuthMode(signUp) {
+  isSignUpMode = signUp;
+  document.getElementById("login-heading").textContent      = signUp ? "Create Account" : "Welcome back";
+  document.getElementById("login-subheading").textContent   = signUp ? "Join OccasionVault free." : "Sign in to access your occasions.";
+  document.getElementById("email-auth-btn").textContent     = signUp ? "Sign Up" : "Sign In";
+  document.getElementById("login-name-field").style.display = signUp ? "block" : "none";
+  document.getElementById("login-toggle-text").innerHTML    = signUp
+    ? 'Already have an account? <span onclick="toggleAuthMode(false)">Sign In</span>'
+    : 'Don\'t have an account? <span onclick="toggleAuthMode(true)">Sign Up</span>';
+  document.getElementById("login-error").style.display = "none";
+}
 
-        const todaySec = document.getElementById("today-section");
-        document.getElementById("today-list").innerHTML = todayB.map(b=>`
-          <div class="today-pulse" onclick="openDetail(${b.id})" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;">
-            <span style="font-size:1.8rem;">${b.emoji}</span>
-            <div><div style="font-weight:bold;font-size:1rem;">${b.name}</div>
-            ${b.year?`<div style="font-size:0.75rem;color:#FF9F43;">Turning ${getUpcomingAge(parseInt(b.year),b.month,b.day)}</div>`:""}</div>
-          </div>`).join("");
-        todaySec.style.display = todayB.length>0 ? "block" : "none";
+function showLoginError(msg) {
+  const el = document.getElementById("login-error");
+  el.textContent = "⚠ " + msg; el.style.display = "block";
+}
+function openAuthModal() { showLoginScreen(); }
 
-        document.getElementById("empty-state").style.display = (upcoming.length===0&&todayB.length===0) ? "block" : "none";
-        document.getElementById("upcoming-list").innerHTML = upcoming.map((b,i)=>{
-          const days=getDaysUntil(b.month,b.day), color=categoryColor(days), zodiac=zodiacSign(b.month,b.day), daysUntil=getDaysUntil(b.month,b.day);
-          return `<div class="card-hover" onclick="openDetail(${b.id})"
-            style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-left:3px solid ${color};border-radius:14px;padding:14px 16px;margin-bottom:10px;animation:fadeIn 0.4s ${i*.05}s both;">
-            <span style="font-size:1.6rem;flex-shrink:0;">${b.emoji}</span>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span style="font-weight:600;font-size:0.95rem;">${b.name}</span>
-                ${zodiac?`<span style="background:rgba(255,255,255,0.07);border-radius:6px;padding:1px 7px;font-size:0.72em;color:#aaa;margin-left:2px;">${zodiac.sym} ${zodiac.name}</span>`:""}
-              </div>
-              <div style="font-size:0.75rem;color:#888;margin-top:2px;">
-                ${MONTHS[b.month-1]} ${b.day}${b.year?`, ${b.year}`:""}${b.year?` · turning ${getUpcomingAge(parseInt(b.year),b.month,b.day)}`:""}
-              </div>
-            </div>
-            <div style="text-align:right;flex-shrink:0;">
-              <div style="color:${color};font-weight:bold;font-size:1.1rem;">${days}</div>
-              <div style="font-size:0.65rem;color:#666;text-transform:uppercase;letter-spacing:0.06em;">days</div>
-            </div>
-          </div>`;
-        }).join("");
+// ═══════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll(".filter-tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  renderList();
+}
 
-        if (todayB.length>0) showConfetti();
-      }
+function renderList() {
+  const search = document.getElementById("search-input").value.toLowerCase();
+  let list = occasions.filter(o => {
+    if (search && !o.name.toLowerCase().includes(search)) return false;
+    if (activeFilter !== "all" && o.cat !== activeFilter) return false;
+    return true;
+  });
+  list = sortOccasions(list);
 
-      // ════════════════════════════════════════════════════════════
-      //  Detail modal
-      // ════════════════════════════════════════════════════════════
-      function openDetail(id) {
-        selectedId = id;
-        const b = birthdays.find(x => x.id == id); if(!b) return;
-        document.getElementById("detail-emoji").textContent = b.emoji;
-        document.getElementById("detail-name").textContent  = b.name;
-        document.getElementById("detail-date").textContent  = `${MONTHS[b.month-1]} ${b.day}${b.year?`, ${b.year}`:""}${b.year?` · Currently ${getAge(parseInt(b.year),b.month,b.day)} years old`:""}`;
-        const days = getDaysUntil(b.month,b.day);
-        document.getElementById("detail-days").textContent   = days===0 ? "TODAY! 🎉" : `${days} days`;
-        document.getElementById("detail-remind").textContent = `${b.remind} days`;
-        const noteWrap = document.getElementById("detail-note-wrap");
-        noteWrap.style.display = b.note ? "block" : "none";
-        noteWrap.textContent = b.note ? `📝 ${b.note}` : "";
-        const rtEl = document.getElementById("detail-remind-time");
-        if (rtEl) rtEl.textContent = b.remindTime ? formatTime(b.remindTime) : "9:00 AM";
-        document.getElementById("detail-modal").style.display = "flex";
-        document.getElementById("fab").style.display = "none";
-      }
-      function closeDetail() {
-        document.getElementById("detail-modal").style.display = "none";
-        if (currentUser) document.getElementById("fab").style.display = "flex";
-        selectedId = null;
-      }
-      function closeDetailOnOverlay(e) { if(e.target===e.currentTarget) closeDetail(); }
+  document.getElementById("subtitle").textContent = `${occasions.length} occasion${occasions.length!==1?"s":""}${isGuest?" (guest)":" ☁"}`;
 
-      async function deleteSelected() {
-        if (selectedId===null) return;
-        const delBtn = document.getElementById("delete-btn");
-        delBtn.textContent = "Deleting…"; delBtn.disabled = true;
-        try {
-          await deleteBirthday(selectedId);
-          delBtn.textContent = "Deleted!"; delBtn.classList.add("glowing-btn");
-          const sheet = document.querySelector("#detail-modal .modal-sheet");
-          sheet.classList.add("blow-away");
-          setTimeout(() => { closeDetail(); renderList(); sheet.classList.remove("blow-away"); delBtn.classList.remove("glowing-btn"); delBtn.textContent="Delete"; delBtn.disabled=false; }, 450);
-        } catch(e) {
-          delBtn.textContent = "Error – retry"; delBtn.disabled = false;
-        }
-      }
+  // Today
+  const todayItems = list.filter(o => getDaysUntil(o.month,o.day,o.recurring,o.fullDate) === 0);
+  const upcoming   = list.filter(o => { const d=getDaysUntil(o.month,o.day,o.recurring,o.fullDate); return d!==null && d>0; });
+  const todaySec   = document.getElementById("today-section");
+  todaySec.style.display = todayItems.length ? "block" : "none";
+  document.getElementById("today-list").innerHTML = todayItems.map(o=>`
+    <div onclick="openDetail('${o.id}')" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;animation:pulse 2s infinite;">
+      <span style="font-size:1.6rem;">${o.emoji}</span>
+      <div><div style="font-weight:700;">${o.name}</div>
+      <div style="font-size:0.75rem;color:var(--muted);">${catLabel(o.cat)}${o.year?` · Turning ${getUpcomingAge(parseInt(o.year),o.month,o.day)}`:""}</div></div>
+    </div>`).join("");
 
-      // ════════════════════════════════════════════════════════════
-      //  Add modal
-      // ════════════════════════════════════════════════════════════
-      function buildEmojiPicker() {
-        document.getElementById("emoji-picker").innerHTML = EMOJIS.map(e=>`
-          <button class="btn emoji-btn" onclick="selectEmoji('${e}')" style="font-size:1.4rem;background:${e===selectedEmoji?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.04)"};border-radius:8px;padding:6px 8px;border:${e===selectedEmoji?"1px solid rgba(255,255,255,0.2)":"1px solid transparent"};">${e}</button>`).join("");
-      }
-      function selectEmoji(e) { selectedEmoji=e; buildEmojiPicker(); }
-      function buildMonthSelect() {
-        const sel = document.getElementById("form-month");
-        sel.innerHTML = MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");
-        sel.value = "1"; updateDayOptions();
-      }
-      function updateDayOptions() {
-        const month = parseInt(document.getElementById("form-month").value);
-        const dayEl = document.getElementById("form-day");
-        const cur   = parseInt(dayEl.value)||1;
-        const max   = DAYS_IN_MONTH[month-1];
-        dayEl.innerHTML = Array.from({length:max},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
-        dayEl.value = Math.min(cur,max);
-      }
-      function updateRemindLabel() {
-        const v = parseInt(document.getElementById("form-remind").value);
-        document.getElementById("remind-label").textContent = `Remind me — ${v} ${v===1?"day":"days"} before`;
-      }
-      function openAdd() {
-        selectedEmoji="🎂"; buildEmojiPicker(); buildMonthSelect();
-        document.getElementById("form-name").value="";
-        document.getElementById("form-year").value="";
-        document.getElementById("form-note").value="";
-        document.getElementById("form-remind").value="7"; updateRemindLabel();
-        document.getElementById("form-remind-time").value="09:00"; clearError();
-        document.getElementById("add-modal").style.display="flex";
-        document.getElementById("fab").style.display="none";
-      }
-      function closeAdd() {
-        document.getElementById("add-modal").style.display="none";
-        if (currentUser) document.getElementById("fab").style.display="flex";
-        clearError();
-      }
-      function closeAddOnOverlay(e) { if(e.target===e.currentTarget) closeAdd(); }
-      function clearError() {
-        document.getElementById("form-error").style.display="none";
-        document.getElementById("form-name").style.borderColor="rgba(255,255,255,0.08)";
-      }
-      function showError(msg) {
-        const err=document.getElementById("form-error"); err.textContent=`⚠ ${msg}`; err.style.display="block";
-        document.getElementById("form-name").style.borderColor="#FF6B6B";
-      }
+  // Empty
+  document.getElementById("empty-state").style.display = (upcoming.length===0&&todayItems.length===0) ? "block":"none";
 
-      async function handleAdd() {
-        const name = document.getElementById("form-name").value.trim();
-        if (!name) { showError("Name is required"); return; }
+  // Group by month
+  let html = ""; let lastMonth = -1;
+  upcoming.forEach((o,i) => {
+    if (o.recurring !== false && o.month !== lastMonth) {
+      html += `<div class="month-header">${MONTHS[o.month-1]}</div>`;
+      lastMonth = o.month;
+    }
+    const days = getDaysUntil(o.month,o.day,o.recurring,o.fullDate);
+    const color = catColor(o.cat);
+    const zodiac = (o.cat==="birthday") ? getZodiac(o.month,o.day) : null;
+    html += `<div class="event-card" onclick="openDetail('${o.id}')" style="animation-delay:${i*0.04}s;border-left:3px solid ${color};">
+      <div class="event-emoji">${o.emoji}</div>
+      <div class="event-info">
+        <div class="event-name">${o.name}</div>
+        <div class="event-meta">
+          <span class="cat-pill" style="background:${color}22;color:${color};">${catIcon(o.cat)} ${catLabel(o.cat)}</span>
+          ${o.year?`<span class="event-badge">Turning ${getUpcomingAge(parseInt(o.year),o.month,o.day)}</span>`:""}
+          ${zodiac?`<span class="zodiac-badge">${zodiac.sym} ${zodiac.name}</span>`:""}
+          <span class="event-badge">${MONTHS_SHORT[o.month-1]} ${o.day}</span>
+        </div>
+      </div>
+      <div class="event-days">
+        <div class="event-days-num" style="color:${daysColor(days)};">${days}</div>
+        <div class="event-days-label">days</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById("upcoming-list").innerHTML = html;
+  if (todayItems.length) showConfetti();
+}
 
-        const entry = {
-          id:         Date.now(),
-          name,
-          month:      parseInt(document.getElementById("form-month").value),
-          day:        parseInt(document.getElementById("form-day").value),
-          year:       document.getElementById("form-year").value.trim(),
-          note:       document.getElementById("form-note").value.trim(),
-          remind:     parseInt(document.getElementById("form-remind").value),
-          remindTime: document.getElementById("form-remind-time").value || "09:00",
-          emoji:      selectedEmoji,
-        };
+// ═══════════════════════════════════════════════
+//  ADD MODAL
+// ═══════════════════════════════════════════════
+function buildCatGrid() {
+  document.getElementById("cat-grid").innerHTML = CATEGORIES.map(c=>`
+    <div class="cat-opt ${c.id===selectedCat?"active":""}" onclick="selectCat('${c.id}')">
+      <span class="cat-opt-icon">${c.icon}</span>${c.label}
+    </div>`).join("");
+}
+function buildEmojiGrid() {
+  const emojis = EMOJIS_BY_CAT[selectedCat] || EMOJIS_BY_CAT.other;
+  if (!emojis.includes(selectedEmoji)) selectedEmoji = emojis[0];
+  document.getElementById("emoji-grid").innerHTML = emojis.map(e=>`
+    <div class="emoji-opt ${e===selectedEmoji?"active":""}" onclick="selectEmoji('${e}')">${e}</div>`).join("");
+}
+function selectCat(id) {
+  selectedCat = id; buildCatGrid(); buildEmojiGrid();
+  // Show zodiac/year only for birthday/anniversary; show full date for one-time events
+  const showYear = ["birthday","anniversary"].includes(id);
+  document.getElementById("year-field").style.display = showYear ? "block" : "none";
+  updateRecurringUI();
+}
+function selectEmoji(e) { selectedEmoji = e; buildEmojiGrid(); }
+function updateDays() {
+  const m = parseInt(document.getElementById("form-month").value);
+  const dayEl = document.getElementById("form-day");
+  const cur = parseInt(dayEl.value)||1;
+  const max = DAYS_IN_MONTH[m-1];
+  dayEl.innerHTML = Array.from({length:max},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
+  dayEl.value = Math.min(cur,max);
+}
+function buildMonthDaySelects() {
+  const mEl = document.getElementById("form-month");
+  mEl.innerHTML = MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");
+  mEl.value = "1"; updateDays();
+}
+function updateRemindLabel() {
+  const v = document.getElementById("form-remind").value;
+  document.getElementById("remind-days-label").textContent = `Remind — ${v} day${v==="1"?"":"s"} before`;
+}
+function toggleRecurring() {
+  isRecurring = !document.getElementById("form-recurring").checked;
+  document.getElementById("form-recurring").checked = isRecurring;
+  updateRecurringUI();
+}
+function updateRecurringUI() {
+  const track = document.getElementById("toggle-track");
+  const thumb = document.getElementById("toggle-thumb");
+  track.style.background = isRecurring ? "var(--primary)" : "#333";
+  thumb.style.left = isRecurring ? "22px" : "2px";
+  document.getElementById("full-date-field").style.display = isRecurring ? "none" : "block";
+  document.getElementById("form-month").closest(".form-row").style.display = isRecurring ? "grid" : "none";
+}
 
-        const submitBtn = document.getElementById("add-submit-btn");
-        submitBtn.textContent = "Saving…"; submitBtn.disabled = true;
+function openAddModal() {
+  if (!currentUser) { showLoginScreen(); return; }
+  selectedCat = "birthday"; selectedEmoji = "🎂"; isRecurring = true;
+  buildCatGrid(); buildEmojiGrid(); buildMonthDaySelects();
+  document.getElementById("form-name").value = "";
+  document.getElementById("form-note").value = "";
+  document.getElementById("form-year").value = "";
+  document.getElementById("form-remind").value = "7"; updateRemindLabel();
+  document.getElementById("form-remind-time").value = "09:00";
+  document.getElementById("form-recurring").checked = true;
+  document.getElementById("year-field").style.display = "block";
+  document.getElementById("form-error").style.display = "none";
+  updateRecurringUI();
+  document.getElementById("add-modal").style.display = "flex";
+  document.getElementById("fab").style.display = "none";
+}
+function closeAddModal() {
+  document.getElementById("add-modal").style.display = "none";
+  document.getElementById("fab").style.display = "flex";
+}
+function clearFormError() { document.getElementById("form-error").style.display = "none"; }
+function showFormError(msg) {
+  const el = document.getElementById("form-error");
+  el.textContent = "⚠ " + msg; el.style.display = "block";
+}
 
-        try {
-          await saveBirthday(entry);
-          scheduleNotifications([entry]);
-          if (getDaysUntil(entry.month,entry.day)===0) showConfetti();
+async function handleSave() {
+  const name = document.getElementById("form-name").value.trim();
+  if (!name) { showFormError("Name is required"); return; }
+  const btn = document.getElementById("save-btn");
+  btn.textContent = "Saving…"; btn.disabled = true;
 
-          submitBtn.textContent="Saved! 🎉"; submitBtn.classList.add("glowing-btn");
-          const sheet = document.querySelector("#add-modal .modal-sheet");
-          sheet.classList.add("blow-away");
-          setTimeout(() => {
-            closeAdd(); renderList(); sheet.classList.remove("blow-away");
-            submitBtn.classList.remove("glowing-btn"); submitBtn.textContent="Save Birthday"; submitBtn.disabled=false;
-          }, 450);
-        } catch(e) {
-          submitBtn.textContent="Error – retry"; submitBtn.disabled=false;
-          let msg = "Failed to save. ";
-          if (e.message && e.message.includes("timeout")) {
-            msg = "Timed out! Make sure Firestore Database is created in Firebase Console (Build → Firestore Database → Create database).";
-          } else if (e.code === "permission-denied") {
-            msg = "Permission denied. Go to Firestore → Rules and set them to test mode.";
-          } else if (e.code === "unavailable") {
-            msg = "No internet connection. Try again.";
-          } else {
-            msg = "Error: " + (e.message || e.code || "unknown");
-          }
-          showError(msg);
-        }
-      }
+  let month = 1, day = 1, fullDate = "";
+  if (isRecurring) {
+    month = parseInt(document.getElementById("form-month").value);
+    day   = parseInt(document.getElementById("form-day").value);
+  } else {
+    fullDate = document.getElementById("form-fulldate").value;
+    if (!fullDate) { showFormError("Please pick a date"); btn.textContent="Save Occasion"; btn.disabled=false; return; }
+    const d = new Date(fullDate);
+    month = d.getMonth()+1; day = d.getDate();
+  }
 
-      // ════════════════════════════════════════════════════════════
-      //  Init
-      // ════════════════════════════════════════════════════════════
-      (function init() {
-        if ("Notification" in window && Notification.permission==="granted") {
-          notifGranted=true; document.getElementById("notif-btn").style.display="none";
-        }
-        initAuth();
-      })();
-    </script>
+  const entry = {
+    id:         Date.now(),
+    name,
+    cat:        selectedCat,
+    emoji:      selectedEmoji,
+    month, day,
+    year:       document.getElementById("form-year").value.trim(),
+    note:       document.getElementById("form-note").value.trim(),
+    remind:     parseInt(document.getElementById("form-remind").value),
+    remindTime: document.getElementById("form-remind-time").value || "09:00",
+    recurring:  isRecurring,
+    fullDate,
+    createdAt:  Date.now(),
+  };
 
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js")
-            .then(() => console.log("Service Worker registered."))
-            .catch(err => console.warn("SW registration skipped:", err));
-        });
-      }
-    </script>
-  </body>
+  try {
+    if (isGuest || !db) {
+      occasions.push(entry);
+      localStorage.setItem(GUEST_KEY, JSON.stringify(occasions));
+      renderList();
+    } else {
+      const {id,...data} = entry;
+      const timeout = new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),10000));
+      await Promise.race([db.collection("users").doc(currentUser.uid).collection("occasions").doc(String(entry.id)).set(data), timeout]);
+    }
+    btn.textContent = "Saved! 🎉";
+    setTimeout(()=>{ closeAddModal(); btn.textContent="Save Occasion"; btn.disabled=false; }, 600);
+    if (getDaysUntil(month,day,isRecurring,fullDate)===0) showConfetti();
+    checkNotifications();
+  } catch(e) {
+    showFormError(e.message.includes("timeout") ? "Timed out — check Firestore is created in Firebase Console." : "Failed to save: "+e.message);
+    btn.textContent = "Save Occasion"; btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DETAIL MODAL
+// ═══════════════════════════════════════════════
+function openDetail(id) {
+  const o = occasions.find(x => String(x.id)===String(id)); if(!o) return;
+  selectedId = id;
+  const days = getDaysUntil(o.month,o.day,o.recurring,o.fullDate);
+  const zodiac = (o.cat==="birthday") ? getZodiac(o.month,o.day) : null;
+  document.getElementById("d-emoji").textContent = o.emoji;
+  document.getElementById("d-name").textContent  = o.name;
+  document.getElementById("d-date").textContent  = `${MONTHS[o.month-1]} ${o.day}${o.year?`, ${o.year}`:""}${o.year?` · Age ${getAge(parseInt(o.year),o.month,o.day)}`:""}`;
+  const zodiacEl = document.getElementById("d-zodiac");
+  if (zodiac) {
+    zodiacEl.style.display = "inline-block";
+    zodiacEl.innerHTML = `<span style="background:rgba(124,107,255,0.15);border-radius:8px;padding:4px 12px;font-size:0.8rem;color:rgba(180,170,255,0.9);font-weight:600;">${zodiac.sym} ${zodiac.name}</span>`;
+  } else { zodiacEl.style.display = "none"; }
+  document.getElementById("d-days").textContent   = days===0 ? "TODAY! 🎉" : days===null ? "Past" : `${days} days`;
+  document.getElementById("d-days").style.color   = daysColor(days||0);
+  document.getElementById("d-cat").textContent    = `${catIcon(o.cat)} ${catLabel(o.cat)}`;
+  document.getElementById("d-remind").textContent = `${o.remind||7} days`;
+  document.getElementById("d-time").textContent   = formatTime(o.remindTime);
+  const noteEl = document.getElementById("d-note");
+  noteEl.style.display = o.note ? "block":"none";
+  noteEl.textContent = o.note ? `📝 ${o.note}` : "";
+  document.getElementById("detail-modal").style.display = "flex";
+  document.getElementById("fab").style.display = "none";
+}
+function closeDetail() {
+  document.getElementById("detail-modal").style.display = "none";
+  document.getElementById("fab").style.display = "flex";
+  selectedId = null;
+}
+
+async function deleteSelected() {
+  if (!selectedId) return;
+  const btn = document.querySelector("#detail-modal .btn-delete");
+  btn.textContent = "Deleting…"; btn.disabled = true;
+  try {
+    if (isGuest || !db) {
+      occasions = occasions.filter(o => String(o.id)!==String(selectedId));
+      localStorage.setItem(GUEST_KEY, JSON.stringify(occasions));
+      renderList();
+    } else {
+      await db.collection("users").doc(currentUser.uid).collection("occasions").doc(String(selectedId)).delete();
+    }
+    closeDetail();
+  } catch(e) { btn.textContent="Error"; btn.disabled=false; }
+}
+
+// ═══════════════════════════════════════════════
+//  CONFETTI
+// ═══════════════════════════════════════════════
+function showConfetti() {
+  const c = document.getElementById("confetti-container");
+  c.innerHTML = ""; c.style.display = "block";
+  const colors = ["#7c6bff","#ff6b9d","#ffd166","#06d6a0","#ff9f43","#48dbfb"];
+  for(let i=0;i<20;i++){
+    const el=document.createElement("div"); const sz=6+Math.random()*10;
+    el.style.cssText=`position:absolute;left:${Math.random()*100}%;top:-20px;width:${sz}px;height:${sz}px;background:${colors[i%6]};border-radius:${Math.random()>.5?"50%":"3px"};animation:fall ${1.5+Math.random()}s ${Math.random()*0.5}s ease-in forwards;`;
+    c.appendChild(el);
+  }
+  setTimeout(()=>{c.style.display="none";c.innerHTML="";},3000);
+}
+
+// ═══════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════
+initApp();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
 </html>
