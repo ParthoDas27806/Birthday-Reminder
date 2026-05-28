@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>OccasionVault — Never Miss a Moment</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg"/>
+  <link rel="apple-touch-icon" href="icon.svg"/>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#0d0d1a"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -81,7 +83,18 @@
     }
 
     /* ── MAIN APP ── */
-    #app{display:none;max-width:540px;margin:0 auto;padding:0 0 100px;min-height:100vh;}
+    #app{display:none;width:100%;padding:0 0 100px;min-height:100vh;}
+    .app-inner{max-width:1200px;margin:0 auto;display:flex;gap:0;position:relative;}
+    .app-sidebar{display:none;width:280px;flex-shrink:0;padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+    .app-sidebar-right{display:none;width:300px;flex-shrink:0;padding:24px 16px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+    .app-main{flex:1;min-width:0;max-width:600px;}
+    @media(min-width:900px){.app-sidebar{display:block;}.app-main{margin:0 auto;}}
+    @media(min-width:1200px){.app-sidebar-right{display:block;}}
+    .sidebar-widget{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;}
+    .sidebar-widget-title{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:12px;}
+    .sidebar-cat-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:all 0.15s;font-size:0.85rem;font-weight:500;margin-bottom:4px;}
+    .sidebar-cat-item:hover{background:rgba(255,255,255,0.06);}
+    .sidebar-cat-item.active{background:rgba(124,107,255,0.12);color:var(--primary);}
 
     /* Header */
     .app-header{padding:28px 20px 20px;background:linear-gradient(180deg,rgba(13,13,26,0.98),rgba(13,13,26,0.85));backdrop-filter:blur(12px);position:sticky;top:0;z-index:30;border-bottom:1px solid var(--border);}
@@ -139,7 +152,7 @@
 
     /* Modals */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.2s ease;}
-    .modal-sheet{background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:28px 24px;width:100%;max-width:540px;animation:slideIn 0.3s ease;max-height:90vh;overflow-y:auto;}
+    .modal-sheet{background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:28px 24px;width:100%;max-width:580px;animation:slideIn 0.3s ease;max-height:90vh;overflow-y:auto;}
     .modal-handle{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 24px;}
     .modal-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:6px;}
     .modal-sub{font-size:0.82rem;color:var(--muted);margin-bottom:24px;}
@@ -300,6 +313,49 @@
 
 <!-- ══════════ MAIN APP ══════════ -->
 <div id="app">
+<div class="app-inner">
+<!-- LEFT SIDEBAR -->
+<div class="app-sidebar">
+  <div style="padding:20px 8px 16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+      <div style="width:38px;height:38px;border-radius:11px;overflow:hidden;flex-shrink:0;">
+        <svg width="38" height="38" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="slg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c6bff"/><stop offset="100%" stop-color="#ff6b9d"/></linearGradient><linearGradient id="slg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffd166"/><stop offset="100%" stop-color="#ff9f43"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#slg1)"/><rect x="8" y="14" width="32" height="26" rx="5" fill="none" stroke="#fff" stroke-width="2.2"/><line x1="8" y1="22" x2="40" y2="22" stroke="#fff" stroke-width="2" opacity="0.5"/><rect x="16" y="9" width="4" height="9" rx="2" fill="url(#slg2)"/><rect x="28" y="9" width="4" height="9" rx="2" fill="url(#slg2)"/><circle cx="17" cy="30" r="2.5" fill="#fff" opacity="0.9"/><circle cx="24" cy="30" r="2.5" fill="#ffd166"/><circle cx="31" cy="30" r="2.5" fill="#fff" opacity="0.9"/><circle cx="17" cy="36" r="2.5" fill="#fff" opacity="0.6"/><circle cx="24" cy="36" r="2.5" fill="#fff" opacity="0.6"/></svg>
+      </div>
+      <div>
+        <div style="font-size:1rem;font-weight:800;background:linear-gradient(90deg,var(--primary),var(--primary2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">OccasionVault</div>
+        <div style="font-size:0.65rem;color:var(--muted);">Never Miss a Moment</div>
+      </div>
+    </div>
+    <!-- Nav -->
+    <div class="sidebar-widget" style="padding:8px;">
+      <div class="sidebar-cat-item active" id="snav-all" onclick="setFilter('all',document.querySelector('.filter-tab'));sidebarNavClick('all')">🗓️ All Occasions</div>
+      <div class="sidebar-cat-item" id="snav-birthday" onclick="setFilterSidebar('birthday')">🎂 Birthdays</div>
+      <div class="sidebar-cat-item" id="snav-anniversary" onclick="setFilterSidebar('anniversary')">💍 Anniversaries</div>
+      <div class="sidebar-cat-item" id="snav-event" onclick="setFilterSidebar('event')">🎉 Events</div>
+      <div class="sidebar-cat-item" id="snav-work" onclick="setFilterSidebar('work')">💼 Work</div>
+      <div class="sidebar-cat-item" id="snav-health" onclick="setFilterSidebar('health')">🏥 Health</div>
+      <div class="sidebar-cat-item" id="snav-travel" onclick="setFilterSidebar('travel')">✈️ Travel</div>
+      <div class="sidebar-cat-item" id="snav-finance" onclick="setFilterSidebar('finance')">💰 Finance</div>
+      <div class="sidebar-cat-item" id="snav-festival" onclick="setFilterSidebar('festival')">🪔 Festival</div>
+      <div class="sidebar-cat-item" id="snav-other" onclick="setFilterSidebar('other')">📌 Other</div>
+    </div>
+    <!-- Profile quick card -->
+    <div class="sidebar-widget" id="sidebar-profile-card" style="cursor:pointer;" onclick="openProfile()">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="sidebar-avatar" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:0.85rem;flex-shrink:0;">?</div>
+        <div style="min-width:0;">
+          <div id="sidebar-name" style="font-size:0.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading…</div>
+          <div id="sidebar-badge" style="font-size:0.68rem;color:var(--muted);">Guest</div>
+        </div>
+        <span style="margin-left:auto;font-size:0.8rem;color:var(--muted);">⚙</span>
+      </div>
+    </div>
+    <button onclick="openAddModal()" style="width:100%;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border:none;border-radius:12px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(124,107,255,0.35);">＋ Add Occasion</button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="app-main">
   <!-- Header -->
   <div class="app-header">
     <div class="app-header-top">
@@ -428,6 +484,34 @@
     <div id="upcoming-list"></div>
   </div>
 </div>
+</div><!-- end app-main -->
+
+<!-- RIGHT SIDEBAR -->
+<div class="app-sidebar-right">
+  <div style="padding:20px 8px 16px;">
+    <!-- Upcoming this week -->
+    <div class="sidebar-widget">
+      <div class="sidebar-widget-title">📅 Upcoming This Week</div>
+      <div id="right-sidebar-week" style="font-size:0.82rem;color:var(--muted);">No events this week</div>
+    </div>
+    <!-- Stats -->
+    <div class="sidebar-widget">
+      <div class="sidebar-widget-title">📊 Your Stats</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:var(--muted);">Total Occasions</span><span id="rs-total" style="font-weight:700;">0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:var(--muted);">Birthdays</span><span id="rs-bday" style="font-weight:700;color:var(--red);">0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:var(--muted);">Anniversaries</span><span id="rs-anniv" style="font-weight:700;color:#ff6b9d;">0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;"><span style="color:var(--muted);">This Month</span><span id="rs-month" style="font-weight:700;color:var(--green);">0</span></div>
+      </div>
+    </div>
+    <!-- Quote -->
+    <div class="sidebar-widget" style="background:linear-gradient(135deg,rgba(124,107,255,0.12),rgba(255,107,157,0.08));border-color:rgba(124,107,255,0.2);">
+      <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;font-style:italic;" id="daily-quote">"The most precious gift we can offer is our time."</div>
+      <div style="font-size:0.7rem;color:var(--primary);margin-top:6px;font-weight:600;">— Daily Reminder</div>
+    </div>
+  </div>
+</div>
+</div><!-- end app-inner -->
 
 <button id="fab" onclick="openAddModal()">＋</button>
 
@@ -614,8 +698,27 @@
     <div class="modal-title" style="font-size:1.2rem;margin-bottom:4px;">Edit Profile</div>
     <div class="modal-sub">Update your display name and username</div>
     <div style="text-align:center;margin-bottom:20px;">
-      <div id="edit-avatar-display" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:#fff;margin:0 auto 8px;cursor:pointer;border:3px solid rgba(255,255,255,0.1);" onclick="changeAvatarColor()">?</div>
-      <div style="font-size:0.75rem;color:var(--primary);cursor:pointer;" onclick="changeAvatarColor()">Tap to change color</div>
+      <div style="position:relative;display:inline-block;">
+        <div id="edit-avatar-display" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;margin:0 auto;cursor:pointer;border:3px solid rgba(255,255,255,0.1);">?</div>
+        <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)"/>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:8px;text-align:center;">Choose Avatar</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">
+          <div onclick="setCartoonAvatar('🐶')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🐶</div>
+          <div onclick="setCartoonAvatar('🐱')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🐱</div>
+          <div onclick="setCartoonAvatar('🦊')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🦊</div>
+          <div onclick="setCartoonAvatar('🐼')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🐼</div>
+          <div onclick="setCartoonAvatar('🦁')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🦁</div>
+          <div onclick="setCartoonAvatar('🐯')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🐯</div>
+          <div onclick="setCartoonAvatar('🦋')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🦋</div>
+          <div onclick="setCartoonAvatar('🐸')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">🐸</div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button onclick="document.getElementById('avatar-file-input').click()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 16px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;">📷 From Gallery</button>
+          <button onclick="changeAvatarColor()" style="background:rgba(124,107,255,0.1);border:1px solid rgba(124,107,255,0.3);color:var(--primary);border-radius:10px;padding:8px 16px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;">🎨 Change Color</button>
+        </div>
+      </div>
     </div>
     <div class="form-field">
       <label class="form-label">Display Name</label>
@@ -828,7 +931,7 @@ async function requestNotif() {
 }
 
 function checkNotifications() {
-  if (!notifGranted || occasions.length === 0) return;
+  if (!notifGranted || localStorage.getItem("ov-notif-suppressed")==="1" || occasions.length === 0) return;
   const uid = currentUser ? (currentUser.uid || currentUser.email || "guest") : "guest";
   const todayKey = new Date().toDateString() + "_" + uid;
   if (localStorage.getItem("ov-notified") === todayKey) return;
@@ -906,9 +1009,16 @@ function showApp() {
   // Restore avatar color
   avatarColorIdx = parseInt(localStorage.getItem("ov-avatar-color")||"0");
   document.getElementById("profile-avatar").style.background = avatarColors[avatarColorIdx];
-  // Save this account for switch-account feature
   if (currentUser && currentUser.email) saveSavedAccount(currentUser);
+  loadSavedAvatar();
   updateHeaderAuth();
+  // Update sidebar profile
+  const sname = document.getElementById("sidebar-name");
+  const sbadge = document.getElementById("sidebar-badge");
+  const sav = document.getElementById("sidebar-avatar");
+  if(sname) sname.textContent = currentUser?.displayName||currentUser?.email||"Guest";
+  if(sbadge) sbadge.textContent = isGuest ? "Guest mode" : "☁ Synced";
+  if(sav) sav.style.background = avatarColors[avatarColorIdx];
   document.getElementById("notif-banner").style.display = notifGranted ? "none" : "flex";
   document.getElementById("notif-hdr-btn").style.display = notifGranted ? "none" : "inline-block";
 }
@@ -987,7 +1097,9 @@ function changeAvatarColor() {
 
 // Notification toggle
 function updateNotifToggleUI() {
-  const granted = "Notification" in window && Notification.permission === "granted";
+  const permGranted = "Notification" in window && Notification.permission === "granted";
+  const suppressed  = localStorage.getItem("ov-notif-suppressed") === "1";
+  const granted = permGranted && !suppressed;
   notifGranted = granted;
   const track = document.getElementById("notif-track");
   const thumb = document.getElementById("notif-thumb");
@@ -1000,12 +1112,30 @@ function updateNotifToggleUI() {
 }
 async function toggleNotifications() {
   if (notifGranted) {
-    // Can't programmatically revoke — guide user
-    document.getElementById("notif-status").textContent = "To disable: use browser/phone settings";
-    setTimeout(updateNotifToggleUI, 2000);
-  } else {
-    await requestNotif();
+    // Store a user preference to suppress notifications even though permission is granted
+    const suppressed = localStorage.getItem("ov-notif-suppressed") === "1";
+    if (suppressed) {
+      localStorage.removeItem("ov-notif-suppressed");
+      notifGranted = true;
+    } else {
+      localStorage.setItem("ov-notif-suppressed", "1");
+      notifGranted = false;
+    }
     updateNotifToggleUI();
+  } else {
+    const perm = Notification.permission;
+    if (perm === "denied") {
+      // Show instructions based on device
+      const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+      document.getElementById("notif-status").textContent = isMobile
+        ? "Go to Phone Settings → Apps → Browser → Notifications"
+        : "Click 🔒 in address bar → Notifications → Allow";
+      setTimeout(updateNotifToggleUI, 3500);
+    } else {
+      await requestNotif();
+      localStorage.removeItem("ov-notif-suppressed");
+      updateNotifToggleUI();
+    }
   }
 }
 
@@ -1098,12 +1228,35 @@ function openSwitchAccount() {
 function closeSwitchAccount() { document.getElementById("switch-account-modal").style.display = "none"; }
 async function switchToAccount(email) {
   closeSwitchAccount();
+  // Save current account first
+  if (currentUser && currentUser.email) saveSavedAccount(currentUser);
   if (unsubFn) { unsubFn(); unsubFn = null; }
-  try { await auth.signOut(); } catch(e){}
-  // Show login screen — user taps Google or enters credentials
-  showLoginScreen();
-  // Pre-fill email
-  setTimeout(()=>{ const el=document.getElementById("auth-email"); if(el) el.value=email; }, 300);
+  // Show loading
+  document.getElementById("loading-overlay").style.display = "flex";
+  try {
+    await auth.signOut();
+  } catch(e){}
+  // Check if this is a Google account saved
+  const saved = getSavedAccounts().find(a=>a.email===email);
+  // Try to sign in with Google popup targeting that account
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ login_hint: email });
+    await auth.signInWithPopup(provider);
+    // onAuthStateChanged will handle rest - showApp() called automatically
+  } catch(e) {
+    // Popup failed or it's an email account — show login with email pre-filled
+    document.getElementById("loading-overlay").style.display = "none";
+    showLoginScreen();
+    setTimeout(()=>{
+      const el = document.getElementById("auth-email");
+      if(el) { el.value = email; el.focus(); }
+      // Show a helpful message
+      showLoginError("Switching to "+email+" — enter your password to continue");
+      document.getElementById("login-error").style.background = "rgba(124,107,255,0.12)";
+      document.getElementById("login-error").style.color = "var(--primary)";
+    }, 350);
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1193,6 +1346,23 @@ function renderList() {
   list = sortOccasions(list);
 
   document.getElementById("subtitle").textContent = `${occasions.length} occasion${occasions.length!==1?"s":""}${isGuest?" (guest)":" ☁"}`;
+  // Right sidebar stats
+  const rsTotal = document.getElementById("rs-total");
+  if(rsTotal) {
+    rsTotal.textContent = occasions.length;
+    const rsBday = document.getElementById("rs-bday");
+    const rsAnniv = document.getElementById("rs-anniv");
+    const rsMonth = document.getElementById("rs-month");
+    if(rsBday) rsBday.textContent = occasions.filter(o=>o.cat==="birthday").length;
+    if(rsAnniv) rsAnniv.textContent = occasions.filter(o=>o.cat==="anniversary").length;
+    if(rsMonth) rsMonth.textContent = occasions.filter(o=>o.month===new Date().getMonth()+1).length;
+    // This week in right sidebar
+    const weekItems = sortOccasions(occasions).filter(o=>{ const d=getDaysUntil(o.month,o.day,o.recurring,o.fullDate,o.recurrenceMode); return d!==null&&d<=7; });
+    const rsWeek = document.getElementById("right-sidebar-week");
+    if(rsWeek) rsWeek.innerHTML = weekItems.length===0
+      ? '<div style="color:var(--muted);font-size:0.82rem;">Nothing this week 🎉</div>'
+      : weekItems.slice(0,4).map(o=>{ const d=getDaysUntil(o.month,o.day,o.recurring,o.fullDate,o.recurrenceMode); return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openDetail('${o.id}')"><span style="font-size:1.1rem;">${o.emoji}</span><div style="flex:1;min-width:0;"><div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.name}</div><div style="font-size:0.7rem;color:var(--muted);">${MONTHS_SHORT[o.month-1]} ${o.day}</div></div><span style="font-size:0.78rem;font-weight:700;color:${daysColor(d)};flex-shrink:0;">${d===0?"Today":d+"d"}</span></div>`; }).join("");
+  }
   // Dashboard
   const dash = document.getElementById("dashboard-strip");
   if (dash) {
@@ -1484,6 +1654,71 @@ function showConfetti() {
 // ═══════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════
+// Avatar functions
+let currentAvatarType = "initials"; // initials | emoji | image
+let currentAvatarEmoji = "";
+let currentAvatarImage = "";
+
+function setCartoonAvatar(emoji) {
+  currentAvatarType = "emoji"; currentAvatarEmoji = emoji;
+  localStorage.setItem("ov-avatar-type", "emoji");
+  localStorage.setItem("ov-avatar-emoji", emoji);
+  updateAllAvatars();
+}
+function handleAvatarUpload(event) {
+  const file = event.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentAvatarType = "image"; currentAvatarImage = e.target.result;
+    localStorage.setItem("ov-avatar-type", "image");
+    localStorage.setItem("ov-avatar-image", e.target.result);
+    updateAllAvatars();
+  };
+  reader.readAsDataURL(file);
+}
+function loadSavedAvatar() {
+  const t = localStorage.getItem("ov-avatar-type")||"initials";
+  currentAvatarType = t;
+  if (t==="emoji")  currentAvatarEmoji = localStorage.getItem("ov-avatar-emoji")||"";
+  if (t==="image")  currentAvatarImage = localStorage.getItem("ov-avatar-image")||"";
+}
+function updateAllAvatars() {
+  const ids = ["profile-avatar","profile-avatar-large","sidebar-avatar","edit-avatar-display"];
+  const name = currentUser?.displayName||"?";
+  const initials = name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
+  ids.forEach(id=>{
+    const el = document.getElementById(id); if(!el) return;
+    if (currentAvatarType==="image" && currentAvatarImage) {
+      el.innerHTML = `<img src="${currentAvatarImage}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/>`;
+      el.style.background = "transparent";
+    } else if (currentAvatarType==="emoji" && currentAvatarEmoji) {
+      el.textContent = currentAvatarEmoji;
+      el.style.background = avatarColors[avatarColorIdx];
+      el.style.fontSize = "1.6rem";
+    } else {
+      el.textContent = initials;
+      el.style.background = avatarColors[avatarColorIdx];
+      el.style.fontSize = "";
+    }
+  });
+}
+
+// Sidebar filter helper
+function setFilterSidebar(f) {
+  activeFilter = f;
+  document.querySelectorAll(".sidebar-cat-item").forEach(el=>el.classList.remove("active"));
+  const sel = document.getElementById("snav-"+f);
+  if(sel) sel.classList.add("active");
+  document.querySelectorAll(".filter-tab").forEach(t=>{
+    t.classList.toggle("active", t.textContent.toLowerCase().includes(f));
+  });
+  renderList();
+}
+function sidebarNavClick(f) {
+  document.querySelectorAll(".sidebar-cat-item").forEach(el=>el.classList.remove("active"));
+  document.getElementById("snav-all")?.classList.add("active");
+}
+
 function quickAdd(cat) {
   selectedCat = cat; openAddModal();
   // Trigger cat selection after modal opens
