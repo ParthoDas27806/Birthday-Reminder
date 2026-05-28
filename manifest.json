@@ -1,121 +1,28 @@
 {
-  "id": "com.parthodas.birthdayreminder",
-  "name": "Birthday Reminder",
-  "short_name": "Birthdays",
-  "description": "Never forget a birthday again. Add birthdays, get reminders, sync across all devices.",
-  "start_url": "/Birthday-Reminder/",
-  "scope": "/Birthday-Reminder/",
+  "id": "com.occasionvault.app",
+  "name": "OccasionVault",
+  "short_name": "OccasionVault",
+  "description": "Never miss a birthday, anniversary or any occasion. Sync across all devices.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "background_color": "#0a0a0f",
-  "theme_color": "#ff6b6b",
+  "display_override": ["window-controls-overlay","standalone"],
+  "background_color": "#0d0d1a",
+  "theme_color": "#7c6bff",
   "orientation": "portrait-primary",
   "lang": "en",
   "dir": "ltr",
-  "categories": ["lifestyle", "utilities", "productivity"],
+  "categories": ["lifestyle","utilities","productivity"],
   "prefer_related_applications": false,
-  "related_applications": [],
-  "scope_extensions": [],
   "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://placehold.co/72x72/1a0a0f/ff6b6b?text=B",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://placehold.co/96x96/1a0a0f/ff6b6b?text=B",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://placehold.co/128x128/1a0a0f/ff6b6b?text=B",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://placehold.co/144x144/1a0a0f/ff6b6b?text=B",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://placehold.co/152x152/1a0a0f/ff6b6b?text=B",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://placehold.co/192x192/1a0a0f/ff6b6b?text=B",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://placehold.co/384x384/1a0a0f/ff6b6b?text=B",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://placehold.co/512x512/1a0a0f/ff6b6b?text=B",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"},
+    {"src":"https://placehold.co/192x192/7c6bff/ffffff?text=OV","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"https://placehold.co/512x512/7c6bff/ffffff?text=OV","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ],
   "screenshots": [
-    {
-      "src": "https://placehold.co/390x844/0a0a0f/ff6b6b?text=Birthday+Reminder",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Birthday Reminder home screen on mobile"
-    },
-    {
-      "src": "https://placehold.co/1280x800/0a0a0f/ff6b6b?text=Birthday+Reminder",
-      "sizes": "1280x800",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Birthday Reminder on desktop"
-    }
+    {"src":"https://placehold.co/390x844/0d0d1a/7c6bff?text=OccasionVault","sizes":"390x844","type":"image/png","form_factor":"narrow","label":"OccasionVault home screen"},
+    {"src":"https://placehold.co/1280x800/0d0d1a/7c6bff?text=OccasionVault","sizes":"1280x800","type":"image/png","form_factor":"wide","label":"OccasionVault on desktop"}
   ],
-  "shortcuts": [
-    {
-      "name": "Add Birthday",
-      "short_name": "Add",
-      "description": "Quickly add a new birthday",
-      "url": "/Birthday-Reminder/",
-      "icons": [
-        {
-          "src": "https://placehold.co/96x96/ff6b6b/ffffff?text=+",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "share_target": {
-    "action": "/Birthday-Reminder/",
-    "method": "GET",
-    "params": {
-      "title": "name",
-      "text": "note"
-    }
-  },
-  "handle_links": "preferred",
-  "edge_side_panel": {
-    "preferred_width": 400
-  }
+  "shortcuts": [{"name":"Add Occasion","short_name":"Add","url":"./","icons":[{"src":"https://placehold.co/96x96/7c6bff/ffffff?text=+","sizes":"96x96","type":"image/png"}]}],
+  "launch_handler": {"client_mode":"focus-existing"}
 }
