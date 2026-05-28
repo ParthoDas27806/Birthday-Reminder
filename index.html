@@ -662,7 +662,72 @@
     <div id="d-note" style="display:none;background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:0.85rem;color:var(--muted);"></div>
     <div class="btn-row">
       <button class="btn-delete" onclick="deleteSelected()">Delete</button>
-      <button class="btn-cancel" style="flex:1.5;" onclick="closeDetail()">Close</button>
+      <button class="btn-cancel" onclick="closeDetail()">Close</button>
+      <button class="btn-save" onclick="openEditOccasion()">✏️ Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Occasion Modal -->
+<div id="edit-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit Occasion</div>
+    <div class="modal-sub">Update the details below</div>
+
+    <!-- Emoji picker -->
+    <div class="form-field">
+      <label class="form-label">Icon</label>
+      <div class="emoji-grid" id="edit-emoji-grid"></div>
+    </div>
+
+    <!-- Name -->
+    <div class="form-field">
+      <label class="form-label">Name / Title *</label>
+      <input class="form-input" id="edit-form-name" type="text" placeholder="e.g. Mom's Birthday"/>
+    </div>
+
+    <!-- Note -->
+    <div class="form-field">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" id="edit-form-note" type="text" placeholder="Gift idea, reminder…"/>
+    </div>
+
+    <!-- Year (birthday/anniversary only) -->
+    <div class="form-field" id="edit-year-field">
+      <label class="form-label">Year (optional)</label>
+      <input class="form-input" id="edit-form-year" type="number" placeholder="e.g. 1995"/>
+    </div>
+
+    <!-- Date -->
+    <div class="form-row" id="edit-month-day-row">
+      <div>
+        <label class="form-label">Month</label>
+        <select class="form-input" id="edit-form-month" onchange="updateEditDays()" style="background:#1a1a2e;"></select>
+      </div>
+      <div>
+        <label class="form-label">Day</label>
+        <select class="form-input" id="edit-form-day" style="background:#1a1a2e;"></select>
+      </div>
+    </div>
+
+    <!-- Reminder -->
+    <div class="form-row">
+      <div>
+        <label class="form-label" id="edit-remind-label">Remind — 7 days before</label>
+        <input type="range" class="range-track" id="edit-form-remind" min="1" max="30" value="7" oninput="updateEditRemindLabel()" style="width:100%;margin-top:8px;"/>
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-top:2px;"><span>1d</span><span>30d</span></div>
+      </div>
+      <div>
+        <label class="form-label">Remind At</label>
+        <input class="form-input" id="edit-form-remind-time" type="time" value="09:00" style="background:#1a1a2e;color-scheme:dark;"/>
+      </div>
+    </div>
+
+    <div id="edit-form-error" style="color:var(--red);font-size:0.8rem;margin-bottom:10px;display:none;"></div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-save" id="edit-save-btn" onclick="handleEditSave()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -720,12 +785,7 @@
       <div><div style="font-size:0.88rem;font-weight:600;">Change Password</div><div style="font-size:0.75rem;color:var(--muted);">Update or set your password</div></div>
       <span style="margin-left:auto;color:var(--muted);">→</span>
     </div>
-    <!-- Switch Account (Instagram-style) -->
-    <div class="profile-action" onclick="openSwitchAccount()">
-      <div class="profile-action-icon" style="background:rgba(72,219,251,0.1);">👥</div>
-      <div><div style="font-size:0.88rem;font-weight:600;">Switch Account</div><div style="font-size:0.75rem;color:var(--muted);" id="switch-acct-sub">Manage saved accounts</div></div>
-      <span style="margin-left:auto;color:var(--muted);">→</span>
-    </div>
+
     <!-- Sign Out -->
     <div class="profile-action" onclick="handleLogout();closeProfile();" style="border-color:rgba(255,107,107,0.2);margin-top:4px;">
       <div class="profile-action-icon" style="background:rgba(255,107,107,0.1);">🚪</div>
@@ -810,17 +870,7 @@
   </div>
 </div>
 
-<!-- Switch Account Modal (Instagram-style) -->
-<div id="switch-account-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeSwitchAccount()">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title" style="font-size:1.2rem;margin-bottom:4px;">Accounts</div>
-    <div class="modal-sub">Tap an account to switch instantly</div>
-    <div id="saved-accounts-list" style="margin-bottom:16px;"></div>
-    <button class="btn-save" style="width:100%;margin-bottom:10px;" onclick="closeSwitchAccount();closeProfile();showLoginScreen();">＋ Add Another Account</button>
-    <button class="btn-cancel" style="width:100%;" onclick="closeSwitchAccount()">Cancel</button>
-  </div>
-</div>
+
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -846,6 +896,30 @@ const firebaseConfig = {
 // ═══════════════════════════════════════════════
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAYS_OF_WEEK = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const DAYS_SHORT   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+function getDayName(month, day, year) {
+  // Get the day name for a given month/day (uses next occurrence if no year)
+  const today = new Date();
+  const y = year || (function(){
+    let d = new Date(today.getFullYear(), month-1, day);
+    if (d < today) d = new Date(today.getFullYear()+1, month-1, day);
+    return d.getFullYear();
+  })();
+  const d = new Date(y, month-1, day);
+  return DAYS_OF_WEEK[d.getDay()];
+}
+function getDayShort(month, day, year) {
+  const today = new Date();
+  const y = year || (function(){
+    let d = new Date(today.getFullYear(), month-1, day);
+    if (d < today) d = new Date(today.getFullYear()+1, month-1, day);
+    return d.getFullYear();
+  })();
+  const d = new Date(y, month-1, day);
+  return DAYS_SHORT[d.getDay()];
+}
 const DAYS_IN_MONTH = [31,29,31,30,31,30,31,31,30,31,30,31];
 const GUEST_KEY  = "occasionvault-guest";
 const GUEST_AUTH = "occasionvault-guest-session";
@@ -1177,7 +1251,6 @@ function showApp() {
   // Restore avatar color
   avatarColorIdx = parseInt(localStorage.getItem("ov-avatar-color")||"0");
   document.getElementById("profile-avatar").style.background = avatarColors[avatarColorIdx];
-  if (currentUser && currentUser.email) saveSavedAccount(currentUser);
   loadSavedAvatar();
   updateHeaderAuth();
   // Update sidebar profile
@@ -1215,15 +1288,7 @@ function updateHeaderAuth() {
 }
 let avatarColors = ["linear-gradient(135deg,#7c6bff,#ff6b9d)","linear-gradient(135deg,#ff6b6b,#ff9f43)","linear-gradient(135deg,#06d6a0,#48dbfb)","linear-gradient(135deg,#ffd166,#ff9f43)","linear-gradient(135deg,#48dbfb,#7c6bff)"];
 let avatarColorIdx = 0;
-const SAVED_ACCOUNTS_KEY = "ov-saved-accounts";
 
-function getSavedAccounts() { try { return JSON.parse(localStorage.getItem(SAVED_ACCOUNTS_KEY)||"[]"); } catch{return [];} }
-function saveSavedAccount(user) {
-  if (!user || !user.email) return;
-  const list = getSavedAccounts().filter(a=>a.email!==user.email);
-  list.unshift({email:user.email, name:user.displayName||user.email, uid:user.uid||null, ts:Date.now()});
-  localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(list.slice(0,5)));
-}
 
 function openProfile() {
   const name  = currentUser?.displayName || (localStorage.getItem("ov-username")) || currentUser?.email || "Guest";
@@ -1252,9 +1317,7 @@ function openProfile() {
   document.getElementById("stat-today").textContent    = occasions.filter(o=>getDaysUntil(o.month,o.day,o.recurring,o.fullDate,o.recurrenceMode)===0).length;
   // Notification toggle state
   updateNotifToggleUI();
-  // Switch account subtitle
-  const saved = getSavedAccounts();
-  document.getElementById("switch-acct-sub").textContent = saved.length>1 ? `${saved.length} saved accounts` : "Add or switch accounts";
+
   updateNotifToggleUI();
   updateNextNotifInfo();
   document.getElementById("profile-modal").style.display = "flex";
@@ -1480,60 +1543,7 @@ async function saveChangePassword() {
   }
 }
 
-// Switch Account (Instagram-style)
-function openSwitchAccount() {
-  closeProfile();
-  const saved = getSavedAccounts();
-  const curEmail = currentUser?.email || "";
-  document.getElementById("saved-accounts-list").innerHTML = saved.length === 0
-    ? `<div style="text-align:center;padding:20px;color:var(--muted);font-size:0.85rem;">No saved accounts yet.<br/>Add another account below.</div>`
-    : saved.map(a => {
-        const initials = a.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"?";
-        const isCurrent = a.email === curEmail;
-        return `<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:${isCurrent?"rgba(124,107,255,0.1)":"rgba(255,255,255,0.03)"};border:1px solid ${isCurrent?"rgba(124,107,255,0.3)":"var(--border)"};margin-bottom:8px;cursor:${isCurrent?"default":"pointer"};" onclick="${isCurrent?"":"switchToAccount('"+a.email+"')"}">
-          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex-shrink:0;">${initials}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.name}</div>
-            <div style="font-size:0.75rem;color:var(--muted);">${a.email}</div>
-          </div>
-          ${isCurrent?'<span style="font-size:0.7rem;color:var(--primary);font-weight:700;">ACTIVE</span>':'<span style="color:var(--muted);font-size:0.85rem;">→</span>'}
-        </div>`;
-      }).join("");
-  document.getElementById("switch-account-modal").style.display = "flex";
-}
-function closeSwitchAccount() { document.getElementById("switch-account-modal").style.display = "none"; }
-async function switchToAccount(email) {
-  closeSwitchAccount();
-  // Save current account first
-  if (currentUser && currentUser.email) saveSavedAccount(currentUser);
-  if (unsubFn) { unsubFn(); unsubFn = null; }
-  // Show loading
-  document.getElementById("loading-overlay").style.display = "flex";
-  try {
-    await auth.signOut();
-  } catch(e){}
-  // Check if this is a Google account saved
-  const saved = getSavedAccounts().find(a=>a.email===email);
-  // Try to sign in with Google popup targeting that account
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ login_hint: email });
-    await auth.signInWithPopup(provider);
-    // onAuthStateChanged will handle rest - showApp() called automatically
-  } catch(e) {
-    // Popup failed or it's an email account — show login with email pre-filled
-    document.getElementById("loading-overlay").style.display = "none";
-    showLoginScreen();
-    setTimeout(()=>{
-      const el = document.getElementById("auth-email");
-      if(el) { el.value = email; el.focus(); }
-      // Show a helpful message
-      showLoginError("Switching to "+email+" — enter your password to continue");
-      document.getElementById("login-error").style.background = "rgba(124,107,255,0.12)";
-      document.getElementById("login-error").style.color = "var(--primary)";
-    }, 350);
-  }
-}
+
 
 // ═══════════════════════════════════════════════
 //  AUTH ACTIONS
@@ -1699,7 +1709,7 @@ function renderList() {
           ${o.year?`<span class="event-badge">Turning ${getUpcomingAge(parseInt(o.year),o.month,o.day)}</span>`:""}
           ${zodiac?`<span class="zodiac-badge">${zodiac.sym} ${zodiac.name}</span>`:""}
           ${o.recurrenceMode==="monthly"?'<span class="monthly-badge">🔄 Monthly</span>':''}
-          <span class="event-badge">${MONTHS_SHORT[o.month-1]} ${o.day}</span>
+          <span class="event-badge">${getDayShort(o.month,o.day,o.year?parseInt(o.year):null)}, ${MONTHS_SHORT[o.month-1]} ${o.day}</span>
         </div>
       </div>
       <div class="event-days">
@@ -1871,7 +1881,8 @@ function openDetail(id) {
   const zodiac = (o.cat==="birthday") ? getZodiac(o.month,o.day) : null;
   document.getElementById("d-emoji").textContent = o.emoji;
   document.getElementById("d-name").textContent  = o.name;
-  document.getElementById("d-date").textContent  = `${MONTHS[o.month-1]} ${o.day}${o.year?`, ${o.year}`:""}${o.year?` · Age ${getAge(parseInt(o.year),o.month,o.day)}`:""}`;
+  const dayName = getDayName(o.month, o.day, o.year ? parseInt(o.year) : null);
+  document.getElementById("d-date").textContent  = `${dayName}, ${MONTHS[o.month-1]} ${o.day}${o.year?`, ${o.year}`:""}${o.year?` · Age ${getAge(parseInt(o.year),o.month,o.day)}`:""}`;
   const zodiacEl = document.getElementById("d-zodiac");
   if (zodiac) {
     zodiacEl.style.display = "inline-block";
@@ -2039,6 +2050,118 @@ function updateNextNotifInfo() {
     el.textContent = `Next reminder: ${next.emoji} ${next.name} in ${days - remindDays}d at ${remindAt}`;
   }
   el.style.color = "var(--primary)";
+}
+
+// ── EDIT OCCASION ────────────────────────────────────────────
+let editingId = null;
+let editSelectedEmoji = "";
+
+function openEditOccasion() {
+  const o = occasions.find(x => String(x.id) === String(selectedId));
+  if (!o) return;
+  editingId = o.id;
+  editSelectedEmoji = o.emoji;
+  closeDetail();
+
+  // Build emoji grid for this category
+  const emojis = EMOJIS_BY_CAT[o.cat] || EMOJIS_BY_CAT.other;
+  // Add current emoji if not in list
+  if (!emojis.includes(o.emoji)) emojis.unshift(o.emoji);
+  document.getElementById("edit-emoji-grid").innerHTML = emojis.map(e =>
+    `<div class="emoji-opt ${e===editSelectedEmoji?"active":""}" onclick="selectEditEmoji('${e}')">${e}</div>`
+  ).join("");
+
+  // Build month select
+  const mEl = document.getElementById("edit-form-month");
+  mEl.innerHTML = MONTHS.map((m,i) => `<option value="${i+1}">${m}</option>`).join("");
+  mEl.value = o.month;
+  updateEditDays();
+  document.getElementById("edit-form-day").value = o.day;
+
+  // Fill fields
+  document.getElementById("edit-form-name").value       = o.name;
+  document.getElementById("edit-form-note").value       = o.note || "";
+  document.getElementById("edit-form-year").value       = o.year || "";
+  document.getElementById("edit-form-remind").value     = o.remind || 7;
+  document.getElementById("edit-form-remind-time").value = o.remindTime || "09:00";
+  updateEditRemindLabel();
+
+  // Show year field only for birthday/anniversary
+  document.getElementById("edit-year-field").style.display = ["birthday","anniversary"].includes(o.cat) ? "block" : "none";
+
+  document.getElementById("edit-form-error").style.display = "none";
+  document.getElementById("edit-modal").style.display = "flex";
+  document.getElementById("fab").style.display = "none";
+}
+
+function selectEditEmoji(e) {
+  editSelectedEmoji = e;
+  document.querySelectorAll("#edit-emoji-grid .emoji-opt").forEach(el => {
+    el.classList.toggle("active", el.textContent === e);
+  });
+}
+
+function updateEditDays() {
+  const m = parseInt(document.getElementById("edit-form-month").value);
+  const dayEl = document.getElementById("edit-form-day");
+  const cur = parseInt(dayEl.value) || 1;
+  const max = DAYS_IN_MONTH[m-1];
+  dayEl.innerHTML = Array.from({length:max},(_,i) => `<option value="${i+1}">${i+1}</option>`).join("");
+  dayEl.value = Math.min(cur, max);
+}
+
+function updateEditRemindLabel() {
+  const v = document.getElementById("edit-form-remind").value;
+  document.getElementById("edit-remind-label").textContent = `Remind — ${v} day${v==="1"?"":"s"} before`;
+}
+
+function closeEditModal() {
+  document.getElementById("edit-modal").style.display = "none";
+  document.getElementById("fab").style.display = "flex";
+  editingId = null;
+}
+
+async function handleEditSave() {
+  const name = document.getElementById("edit-form-name").value.trim();
+  if (!name) {
+    const err = document.getElementById("edit-form-error");
+    err.textContent = "⚠ Name is required"; err.style.display = "block"; return;
+  }
+  const btn = document.getElementById("edit-save-btn");
+  btn.textContent = "Saving…"; btn.disabled = true;
+
+  const original = occasions.find(x => String(x.id) === String(editingId));
+  if (!original) { btn.textContent="Save Changes"; btn.disabled=false; return; }
+
+  const updated = {
+    ...original,
+    name,
+    emoji:      editSelectedEmoji,
+    month:      parseInt(document.getElementById("edit-form-month").value),
+    day:        parseInt(document.getElementById("edit-form-day").value),
+    year:       document.getElementById("edit-form-year").value.trim(),
+    note:       document.getElementById("edit-form-note").value.trim(),
+    remind:     parseInt(document.getElementById("edit-form-remind").value),
+    remindTime: document.getElementById("edit-form-remind-time").value || "09:00",
+  };
+
+  try {
+    if (isGuest || !db) {
+      const idx = occasions.findIndex(x => String(x.id) === String(editingId));
+      if (idx !== -1) occasions[idx] = updated;
+      localStorage.setItem(GUEST_KEY, JSON.stringify(occasions));
+      renderList();
+    } else {
+      const {id, ...data} = updated;
+      await db.collection("users").doc(currentUser.uid).collection("occasions").doc(String(editingId)).set(data);
+    }
+    btn.textContent = "Saved! ✅";
+    setTimeout(() => { closeEditModal(); renderList(); scheduleAllNotifications(); btn.textContent="Save Changes"; btn.disabled=false; }, 600);
+  } catch(e) {
+    document.getElementById("edit-form-error").textContent = "⚠ Save failed: " + e.message;
+    document.getElementById("edit-form-error").style.display = "block";
+    btn.textContent = "Save Changes"; btn.disabled = false;
+  }
 }
 
 function quickAdd(cat) {
