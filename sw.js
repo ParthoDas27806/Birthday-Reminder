@@ -1,63 +1,66 @@
-const CACHE_NAME = "birthday-reminder-v4";
+// OccasionVault Service Worker v5
+const CACHE = "occasionvault-v5";
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
-});
+self.addEventListener("install", () => self.skipWaiting());
 
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.map(key => caches.delete(key)))
-    )
-  );
+self.addEventListener("activate", e => {
+  e.waitUntil(caches.keys().then(keys =>
+    Promise.all(keys.map(k => caches.delete(k)))
+  ));
   self.clients.claim();
 });
 
-// Never cache HTML — always fetch fresh from network
-self.addEventListener("fetch", event => {
-  const url = new URL(event.request.url);
-
-  // Always go to network for HTML pages (so updates show instantly)
-  if (event.request.mode === "navigate" ||
-      url.pathname.endsWith(".html") ||
-      url.pathname.endsWith("/")) {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.match("/Birthday-Reminder/index.html")
-      )
-    );
+// Never cache HTML — always fresh
+self.addEventListener("fetch", e => {
+  if (e.request.mode === "navigate") {
+    e.respondWith(fetch(e.request).catch(() => caches.match("./index.html")));
     return;
   }
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+      if (res && res.status === 200 && res.type === "basic") {
+        caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+      }
+      return res;
+    }))
+  );
+});
 
-  // Cache-first for everything else (CSS, JS, images)
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+// Show notifications sent from app
+self.addEventListener("push", e => {
+  let d = { title: "OccasionVault", body: "You have an upcoming occasion!" };
+  try { if (e.data) d = e.data.json(); } catch {}
+  e.waitUntil(self.registration.showNotification(d.title, {
+    body: d.body, icon: "./icon.svg", badge: "./icon.svg",
+    vibrate: [200, 100, 200], tag: d.tag || "ov-notif", renotify: true,
+  }));
+});
+
+// Handle notification click
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url.includes("OccasionVault") || c.url.includes("Birthday-Reminder") || c.url.includes("github.io")) {
+          return c.focus();
         }
-        return response;
-      });
+      }
+      return clients.openWindow("./");
     })
   );
 });
 
-self.addEventListener("push", event => {
-  let data = { title: "Birthday Reminder", body: "You have an upcoming birthday!" };
-  try { if (event.data) data = event.data.json(); } catch(e) {}
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: "https://placehold.co/192x192/ff6b6b/ffffff?text=B",
-      tag: "birthday-reminder",
-      data: { url: "/Birthday-Reminder/" }
-    })
-  );
-});
-
-self.addEventListener("notificationclick", event => {
-  event.notification.close();
-  event.waitUntil(clients.openWindow("/Birthday-Reminder/"));
+// Listen for messages from the app to show notifications
+self.addEventListener("message", e => {
+  if (e.data && e.data.type === "SHOW_NOTIFICATION") {
+    self.registration.showNotification(e.data.title, {
+      body: e.data.body,
+      icon: "./icon.svg",
+      badge: "./icon.svg",
+      vibrate: [200, 100, 200],
+      tag: e.data.tag || "ov-msg",
+      renotify: true,
+    });
+  }
 });
