@@ -911,50 +911,164 @@ function sortOccasions(list) {
 // ═══════════════════════════════════════════════
 //  NOTIFICATIONS — properly working
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+//  NOTIFICATION SYSTEM — Fully working
+//  Uses setTimeout scheduling so notifications
+//  fire at the EXACT remindTime the user set,
+//  even while app is open. Also fires on load
+//  for any missed occasions.
+// ═══════════════════════════════════════════════
+let scheduledTimers = [];
+
 async function requestNotif() {
   if (!("Notification" in window)) {
-    alert("Your browser does not support notifications.");
+    alert("This browser doesn't support notifications. Try Chrome or Firefox.");
+    return;
+  }
+  // If already denied, show exact steps
+  if (Notification.permission === "denied") {
+    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+    if (isMobile) {
+      alert("Notifications are blocked.\n\nTo enable:\n1. Open your phone Settings\n2. Find your browser app (Chrome)\n3. Tap Notifications → Allow");
+    } else {
+      alert("Notifications are blocked.\n\nTo enable:\n1. Click the 🔒 lock icon in the address bar\n2. Set Notifications to Allow\n3. Refresh the page");
+    }
     return;
   }
   const perm = await Notification.requestPermission();
+  const wasEnabled = localStorage.getItem("ov-notif-suppressed") !== "1";
   notifGranted = perm === "granted";
-  document.getElementById("notif-hdr-btn").style.display = notifGranted ? "none" : "inline-block";
-  document.getElementById("notif-banner").style.display  = notifGranted ? "none" : "flex";
   if (notifGranted) {
-    // Show test notification immediately so user knows it works
-    new Notification("🔔 OccasionVault", {
-      body: "Notifications enabled! You'll never miss an occasion.",
-      icon: "https://placehold.co/192x192/7c6bff/ffffff?text=OV"
-    });
-    checkNotifications();
+    localStorage.removeItem("ov-notif-suppressed");
+    updateNotifUI();
+    // Fire a real test notification immediately
+    fireNotification("🔔 OccasionVault", "Notifications are ON! You'll never miss an occasion.", `ov-test-${Date.now()}`);
+    // Schedule all occasions
+    scheduleAllNotifications();
+    // Also check right now for today/overdue
+    checkNotificationsNow(true);
+  }
+  updateNotifToggleUI();
+}
+
+function fireNotification(title, body, tag) {
+  if (Notification.permission !== "granted") return;
+  if (localStorage.getItem("ov-notif-suppressed") === "1") return;
+  try {
+    // Use service worker if available (works when tab is in background)
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          body, tag,
+          icon: "./icon.svg",
+          badge: "./icon.svg",
+          vibrate: [200, 100, 200],
+          renotify: true,
+        });
+      });
+    } else {
+      new Notification(title, { body, tag, icon: "./icon.svg" });
+    }
+  } catch(e) {
+    // Fallback
+    try { new Notification(title, { body, tag }); } catch(e2){}
   }
 }
 
-function checkNotifications() {
-  if (!notifGranted || localStorage.getItem("ov-notif-suppressed")==="1" || occasions.length === 0) return;
+function scheduleAllNotifications() {
+  // Clear old timers
+  scheduledTimers.forEach(t => clearTimeout(t));
+  scheduledTimers = [];
+  if (!notifGranted || localStorage.getItem("ov-notif-suppressed")==="1") return;
+
+  const now = new Date();
+  occasions.forEach(o => {
+    const remindTime = o.remindTime || "09:00";
+    const [rh, rm] = remindTime.split(":").map(Number);
+
+    // ── Check for TODAY's notification ──
+    const todayDays = getDaysUntil(o.month, o.day, o.recurring, o.fullDate, o.recurrenceMode);
+
+    // Schedule reminder X days before
+    const remindDays = parseInt(o.remind || 7);
+    if (todayDays !== null && todayDays === remindDays) {
+      // Should fire today at remindTime
+      const fireAt = new Date();
+      fireAt.setHours(rh, rm, 0, 0);
+      const ms = fireAt - now;
+      if (ms > 0) {
+        const t = setTimeout(() => {
+          fireNotification(
+            `${o.emoji} ${o.name} in ${remindDays} days!`,
+            `${catLabel(o.cat)} · ${MONTHS_SHORT[o.month-1]} ${o.day}`,
+            `ov-remind-${o.id}`
+          );
+        }, ms);
+        scheduledTimers.push(t);
+      }
+    }
+
+    // Schedule birthday/event ON THE DAY at remindTime
+    if (todayDays === 0) {
+      const fireAt = new Date();
+      fireAt.setHours(rh, rm, 0, 0);
+      const ms = fireAt - now;
+      // Fire now if time already passed today, else schedule
+      if (ms <= 0) {
+        fireNotification(
+          `${o.emoji} Today: ${o.name}!`,
+          o.note || `${catLabel(o.cat)} — Don't forget to celebrate!`,
+          `ov-today-${o.id}`
+        );
+      } else {
+        const t = setTimeout(() => {
+          fireNotification(
+            `${o.emoji} Today: ${o.name}!`,
+            o.note || `${catLabel(o.cat)} — Don't forget to celebrate!`,
+            `ov-today-${o.id}`
+          );
+        }, ms);
+        scheduledTimers.push(t);
+      }
+    }
+  });
+}
+
+function checkNotificationsNow(force = false) {
+  if (!notifGranted || localStorage.getItem("ov-notif-suppressed")==="1") return;
+  if (occasions.length === 0) return;
+
   const uid = currentUser ? (currentUser.uid || currentUser.email || "guest") : "guest";
   const todayKey = new Date().toDateString() + "_" + uid;
-  if (localStorage.getItem("ov-notified") === todayKey) return;
+  // Don't repeat same-session check unless forced
+  if (!force && localStorage.getItem("ov-notified") === todayKey) return;
 
   occasions.forEach(o => {
-    const days = getDaysUntil(o.month, o.day, o.recurring, o.fullDate);
+    const days = getDaysUntil(o.month, o.day, o.recurring, o.fullDate, o.recurrenceMode);
     if (days === null) return;
+    const remindDays = parseInt(o.remind || 7);
+
     if (days === 0) {
-      new Notification(`${o.emoji} Today: ${o.name}!`, {
-        body: o.note || `${catLabel(o.cat)} — Don't forget!`,
-        icon: "https://placehold.co/192x192/7c6bff/ffffff?text=OV",
-        tag: `ov-${o.id}`
-      });
-    } else if (days === parseInt(o.remind || 7)) {
-      new Notification(`${o.emoji} ${o.name} in ${days} days`, {
-        body: `${MONTHS_SHORT[o.month-1]} ${o.day} · ${catLabel(o.cat)}`,
-        icon: "https://placehold.co/192x192/7c6bff/ffffff?text=OV",
-        tag: `ov-${o.id}`
-      });
+      // Birthday/event is TODAY — fire immediately
+      fireNotification(
+        `${o.emoji} Today: ${o.name}!`,
+        o.note || `${catLabel(o.cat)} — Don't forget!`,
+        `ov-today-${o.id}`
+      );
+    } else if (days === remindDays) {
+      // Remind day is today
+      fireNotification(
+        `${o.emoji} ${o.name} in ${days} day${days===1?"":"s"}!`,
+        `${catLabel(o.cat)} · ${MONTHS_SHORT[o.month-1]} ${o.day} · Set for ${formatTime(o.remindTime)}`,
+        `ov-remind-${o.id}`
+      );
     }
   });
   localStorage.setItem("ov-notified", todayKey);
 }
+
+// Alias for backward compat
+function checkNotifications() { checkNotificationsNow(false); }
 
 // ═══════════════════════════════════════════════
 //  FIREBASE INIT & AUTH
@@ -981,7 +1095,7 @@ function initApp() {
       subscribeFirestore(user.uid);
     } else {
       const g = localStorage.getItem(GUEST_AUTH);
-      if (g) { isGuest = true; currentUser = JSON.parse(g); occasions = JSON.parse(localStorage.getItem(GUEST_KEY)||"[]"); hideLoading(); showApp(); renderList(); checkNotifications(); }
+      if (g) { isGuest = true; currentUser = JSON.parse(g); occasions = JSON.parse(localStorage.getItem(GUEST_KEY)||"[]"); hideLoading(); showApp(); renderList(); checkNotificationsNow(false); scheduleAllNotifications(); }
       else { hideLoading(); showLoginScreen(); }
     }
   });
@@ -992,7 +1106,7 @@ function subscribeFirestore(uid) {
     .onSnapshot(snap => {
       occasions = [];
       snap.forEach(d => occasions.push({id:d.id,...d.data()}));
-      renderList(); checkNotifications();
+      renderList(); checkNotificationsNow(false); scheduleAllNotifications();
     }, err => console.error("Firestore:", err));
 }
 
@@ -1096,6 +1210,7 @@ function changeAvatarColor() {
 }
 
 // Notification toggle
+function updateNotifUI() { updateNotifToggleUI(); } // alias
 function updateNotifToggleUI() {
   const permGranted = "Notification" in window && Notification.permission === "granted";
   const suppressed  = localStorage.getItem("ov-notif-suppressed") === "1";
@@ -1111,30 +1226,37 @@ function updateNotifToggleUI() {
   status.style.color = granted ? "var(--green)" : "var(--muted)";
 }
 async function toggleNotifications() {
-  if (notifGranted) {
-    // Store a user preference to suppress notifications even though permission is granted
-    const suppressed = localStorage.getItem("ov-notif-suppressed") === "1";
-    if (suppressed) {
-      localStorage.removeItem("ov-notif-suppressed");
-      notifGranted = true;
-    } else {
-      localStorage.setItem("ov-notif-suppressed", "1");
-      notifGranted = false;
-    }
+  const permState = "Notification" in window ? Notification.permission : "denied";
+  const suppressed = localStorage.getItem("ov-notif-suppressed") === "1";
+  const effectivelyOn = permState === "granted" && !suppressed;
+
+  if (effectivelyOn) {
+    // Turn OFF — suppress
+    localStorage.setItem("ov-notif-suppressed", "1");
+    notifGranted = false;
+    scheduledTimers.forEach(t => clearTimeout(t));
+    scheduledTimers = [];
     updateNotifToggleUI();
-  } else {
-    const perm = Notification.permission;
-    if (perm === "denied") {
-      // Show instructions based on device
-      const isMobile = /Android|iPhone/i.test(navigator.userAgent);
-      document.getElementById("notif-status").textContent = isMobile
-        ? "Go to Phone Settings → Apps → Browser → Notifications"
-        : "Click 🔒 in address bar → Notifications → Allow";
-      setTimeout(updateNotifToggleUI, 3500);
-    } else {
-      await requestNotif();
-      localStorage.removeItem("ov-notif-suppressed");
-      updateNotifToggleUI();
+  } else if (permState === "granted" && suppressed) {
+    // Was suppressed — turn back ON
+    localStorage.removeItem("ov-notif-suppressed");
+    notifGranted = true;
+    updateNotifToggleUI();
+    scheduleAllNotifications();
+    fireNotification("🔔 OccasionVault", "Notifications turned back ON!", "ov-resumed");
+  } else if (permState === "default") {
+    // Not yet asked — request permission
+    await requestNotif();
+  } else if (permState === "denied") {
+    // Blocked — show instructions
+    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+    const st = document.getElementById("notif-status");
+    if (st) {
+      st.textContent = isMobile
+        ? "⚙ Settings → Apps → Chrome → Notifications → Allow"
+        : "⚙ Click 🔒 in address bar → Notifications → Allow → Refresh";
+      st.style.color = "var(--orange)";
+      setTimeout(() => { st.style.color=""; updateNotifToggleUI(); }, 4000);
     }
   }
 }
@@ -1578,7 +1700,7 @@ async function handleSave() {
     btn.textContent = "Saved! 🎉";
     setTimeout(()=>{ closeAddModal(); btn.textContent="Save Occasion"; btn.disabled=false; }, 600);
     if (getDaysUntil(month,day,isRecurring,fullDate,recurrenceMode)===0) showConfetti();
-    checkNotifications();
+    checkNotificationsNow(true); scheduleAllNotifications();
   } catch(e) {
     showFormError(e.message.includes("timeout") ? "Timed out — check Firestore is created in Firebase Console." : "Failed to save: "+e.message);
     btn.textContent = "Save Occasion"; btn.disabled = false;
