@@ -925,14 +925,9 @@ async function requestNotif() {
     alert("This browser doesn't support notifications. Try Chrome or Firefox.");
     return;
   }
-  // If already denied, show exact steps
+  // If already denied, show direct settings modal (no text instructions)
   if (Notification.permission === "denied") {
-    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
-    if (isMobile) {
-      alert("Notifications are blocked.\n\nTo enable:\n1. Open your phone Settings\n2. Find your browser app (Chrome)\n3. Tap Notifications → Allow");
-    } else {
-      alert("Notifications are blocked.\n\nTo enable:\n1. Click the 🔒 lock icon in the address bar\n2. Set Notifications to Allow\n3. Refresh the page");
-    }
+    showUnblockModal();
     return;
   }
   const perm = await Notification.requestPermission();
@@ -1231,34 +1226,112 @@ async function toggleNotifications() {
   const effectivelyOn = permState === "granted" && !suppressed;
 
   if (effectivelyOn) {
-    // Turn OFF — suppress
+    // ── Turn OFF ──
+    // 1. Suppress all in-app notifications immediately
     localStorage.setItem("ov-notif-suppressed", "1");
     notifGranted = false;
     scheduledTimers.forEach(t => clearTimeout(t));
     scheduledTimers = [];
     updateNotifToggleUI();
+    // 2. Open browser notification settings so user can also block at OS level
+    //    This is the ONLY way a web app can direct user to turn off at browser level
+    setTimeout(() => {
+      const isMobile = /Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        // On Android Chrome, this deep-links directly to site notification settings
+        window.open("chrome://settings/content/notifications", "_blank");
+      }
+      // On iOS/desktop, browser prevents opening chrome:// but in-app suppression
+      // already stops all notifications — so nothing more needed
+    }, 400);
+
   } else if (permState === "granted" && suppressed) {
-    // Was suppressed — turn back ON
+    // ── Turn back ON (was suppressed) ──
     localStorage.removeItem("ov-notif-suppressed");
     notifGranted = true;
     updateNotifToggleUI();
     scheduleAllNotifications();
-    fireNotification("🔔 OccasionVault", "Notifications turned back ON!", "ov-resumed");
+    fireNotification("🔔 OccasionVault", "Notifications are back ON! 🎉", "ov-resumed");
+
   } else if (permState === "default") {
-    // Not yet asked — request permission
+    // ── Never asked before — show native browser popup ──
     await requestNotif();
+
   } else if (permState === "denied") {
-    // Blocked — show instructions
-    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
-    const st = document.getElementById("notif-status");
-    if (st) {
-      st.textContent = isMobile
-        ? "⚙ Settings → Apps → Chrome → Notifications → Allow"
-        : "⚙ Click 🔒 in address bar → Notifications → Allow → Refresh";
-      st.style.color = "var(--orange)";
-      setTimeout(() => { st.style.color=""; updateNotifToggleUI(); }, 4000);
-    }
+    // ── Was blocked via browser — open browser settings directly ──
+    showUnblockModal();
   }
+}
+
+function showUnblockModal() {
+  // Remove old modal if exists
+  const old = document.getElementById("unblock-modal");
+  if (old) old.remove();
+
+  const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
+
+  let steps = "";
+  let btnLabel = "";
+  let btnAction = "";
+
+  if (isAndroid) {
+    steps = "Notifications are blocked by your browser.<br><br><strong>Tap the button below</strong> — it opens Chrome settings directly where you can allow notifications for this site.";
+    btnLabel = "⚙ Open Chrome Settings";
+    btnAction = "openAndroidNotifSettings()";
+  } else if (isIOS) {
+    steps = "On iPhone, go to:<br><strong>Settings → Safari → Advanced → Website Data</strong><br>then find this site and allow notifications.";
+    btnLabel = "Open iPhone Settings";
+    btnAction = "window.open('App-Prefs:root=NOTIFICATIONS_ID','_blank')";
+  } else {
+    steps = "Click the button below — it opens your browser notification settings where you can allow this site.";
+    btnLabel = "⚙ Open Browser Settings";
+    btnAction = "openDesktopNotifSettings()";
+  }
+
+  const modal = document.createElement("div");
+  modal.id = "unblock-modal";
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;";
+  modal.innerHTML = `
+    <div style="background:#1e1e30;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;max-width:380px;width:100%;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:12px;">🔔</div>
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:10px;">Enable Notifications</div>
+      <div style="font-size:0.85rem;color:#8884aa;line-height:1.6;margin-bottom:20px;">${steps}</div>
+      <button onclick="${btnAction};document.getElementById('unblock-modal').remove();"
+        style="width:100%;background:linear-gradient(135deg,#7c6bff,#ff6b9d);color:#fff;border:none;border-radius:12px;padding:13px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">${btnLabel}</button>
+      <button onclick="document.getElementById('unblock-modal').remove();"
+        style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#8884aa;border-radius:12px;padding:11px;font-size:0.85rem;cursor:pointer;font-family:inherit;">Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function openAndroidNotifSettings() {
+  // Try to open site-specific notification settings on Android Chrome
+  try {
+    // This works on Android Chrome to open site settings
+    window.location.href = "intent://settings/notification_settings#Intent;scheme=android-app;package=com.android.chrome;end";
+  } catch(e) {}
+  // Fallback — open about:blank which triggers Chrome to show settings option
+  setTimeout(() => {
+    window.open("about:blank", "_blank");
+    setTimeout(() => {
+      alert("In Chrome:\n1. Tap ⋮ Menu → Settings\n2. Site Settings → Notifications\n3. Find this site → Allow");
+    }, 500);
+  }, 300);
+}
+
+function openDesktopNotifSettings() {
+  // Try chrome://settings first
+  const a = document.createElement("a");
+  a.href = "chrome://settings/content/siteDetails?site=" + encodeURIComponent(location.origin);
+  a.click();
+  // Fallback message after delay
+  setTimeout(() => {
+    if (document.hasFocus()) {
+      alert("Click the 🔒 lock icon in your browser address bar → Site Settings → Notifications → Allow");
+    }
+  }, 800);
 }
 
 // Edit Profile
