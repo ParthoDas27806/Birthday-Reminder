@@ -652,16 +652,25 @@
       <div class="profile-stat"><div class="profile-stat-num" id="stat-today">0</div><div class="profile-stat-label">Today</div></div>
     </div>
     <!-- Notification toggle -->
-    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-      <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,209,102,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🔔</div>
-      <div style="flex:1;">
-        <div style="font-size:0.88rem;font-weight:600;">Notifications</div>
-        <div id="notif-status" style="font-size:0.75rem;color:var(--muted);">Loading…</div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,209,102,0.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🔔</div>
+        <div style="flex:1;">
+          <div style="font-size:0.88rem;font-weight:600;">Notifications</div>
+          <div id="notif-status" style="font-size:0.75rem;color:var(--muted);">Loading…</div>
+        </div>
+        <div id="notif-toggle-wrap" onclick="toggleNotifications()" style="position:relative;width:46px;height:26px;cursor:pointer;flex-shrink:0;">
+          <div id="notif-track" style="position:absolute;inset:0;border-radius:13px;background:#333;transition:0.25s;"></div>
+          <div id="notif-thumb" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>
+        </div>
       </div>
-      <div id="notif-toggle-wrap" onclick="toggleNotifications()" style="position:relative;width:46px;height:26px;cursor:pointer;flex-shrink:0;">
-        <div id="notif-track" style="position:absolute;inset:0;border-radius:13px;background:#333;transition:0.25s;"></div>
-        <div id="notif-thumb" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>
+      <!-- Test + clock reminder row -->
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+        <button onclick="sendTestNotification()" style="flex:1;background:rgba(124,107,255,0.12);border:1px solid rgba(124,107,255,0.25);color:var(--primary);border-radius:8px;padding:7px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;" onmouseover="this.style.background='rgba(124,107,255,0.2)'" onmouseout="this.style.background='rgba(124,107,255,0.12)'">🔔 Test Now</button>
+        <button onclick="rescheduleFromProfile()" style="flex:1;background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.2);color:var(--green);border-radius:8px;padding:7px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;" onmouseover="this.style.background='rgba(6,214,160,0.18)'" onmouseout="this.style.background='rgba(6,214,160,0.1)'">⏰ Reschedule</button>
       </div>
+      <!-- Next scheduled notification info -->
+      <div id="next-notif-info" style="margin-top:8px;font-size:0.74rem;color:var(--muted);text-align:center;"></div>
     </div>
     <!-- Edit Profile -->
     <div class="profile-action" onclick="openEditProfile()">
@@ -971,62 +980,75 @@ function fireNotification(title, body, tag) {
 }
 
 function scheduleAllNotifications() {
-  // Clear old timers
   scheduledTimers.forEach(t => clearTimeout(t));
   scheduledTimers = [];
   if (!notifGranted || localStorage.getItem("ov-notif-suppressed")==="1") return;
+  if (occasions.length === 0) return;
 
   const now = new Date();
+
   occasions.forEach(o => {
     const remindTime = o.remindTime || "09:00";
-    const [rh, rm] = remindTime.split(":").map(Number);
+    const [rh, rm]   = remindTime.split(":").map(Number);
+    const daysUntil  = getDaysUntil(o.month, o.day, o.recurring, o.fullDate, o.recurrenceMode);
+    if (daysUntil === null) return;
 
-    // ── Check for TODAY's notification ──
-    const todayDays = getDaysUntil(o.month, o.day, o.recurring, o.fullDate, o.recurrenceMode);
-
-    // Schedule reminder X days before
     const remindDays = parseInt(o.remind || 7);
-    if (todayDays !== null && todayDays === remindDays) {
-      // Should fire today at remindTime
+
+    // ── Helper: schedule a notification at a given time today or in N days ──
+    const scheduleAt = (daysFromNow, title, body, tag) => {
       const fireAt = new Date();
+      fireAt.setDate(fireAt.getDate() + daysFromNow);
       fireAt.setHours(rh, rm, 0, 0);
       const ms = fireAt - now;
-      if (ms > 0) {
-        const t = setTimeout(() => {
-          fireNotification(
-            `${o.emoji} ${o.name} in ${remindDays} days!`,
-            `${catLabel(o.cat)} · ${MONTHS_SHORT[o.month-1]} ${o.day}`,
-            `ov-remind-${o.id}`
-          );
-        }, ms);
+      if (ms > 0 && ms < 7 * 24 * 60 * 60 * 1000) { // only schedule within 7 days
+        const t = setTimeout(() => fireNotification(title, body, tag), ms);
         scheduledTimers.push(t);
+      } else if (ms <= 0 && daysFromNow === 0) {
+        // Time already passed today — fire immediately (missed notification)
+        fireNotification(title, body, tag);
       }
+    };
+
+    // ── CASE 1: Occasion is TODAY ──
+    if (daysUntil === 0) {
+      scheduleAt(0,
+        `${o.emoji} Today: ${o.name}! 🎉`,
+        o.note || `${catLabel(o.cat)} — Don't forget!`,
+        `ov-today-${o.id}`
+      );
     }
 
-    // Schedule birthday/event ON THE DAY at remindTime
-    if (todayDays === 0) {
-      const fireAt = new Date();
-      fireAt.setHours(rh, rm, 0, 0);
-      const ms = fireAt - now;
-      // Fire now if time already passed today, else schedule
-      if (ms <= 0) {
-        fireNotification(
-          `${o.emoji} Today: ${o.name}!`,
-          o.note || `${catLabel(o.cat)} — Don't forget to celebrate!`,
-          `ov-today-${o.id}`
-        );
-      } else {
-        const t = setTimeout(() => {
-          fireNotification(
-            `${o.emoji} Today: ${o.name}!`,
-            o.note || `${catLabel(o.cat)} — Don't forget to celebrate!`,
-            `ov-today-${o.id}`
-          );
-        }, ms);
-        scheduledTimers.push(t);
-      }
+    // ── CASE 2: Reminder day is TODAY (X days before) ──
+    if (daysUntil === remindDays) {
+      scheduleAt(0,
+        `${o.emoji} ${o.name} in ${remindDays} day${remindDays===1?"":"s"}!`,
+        `${catLabel(o.cat)} · ${MONTHS_SHORT[o.month-1]} ${o.day} · At ${formatTime(remindTime)}`,
+        `ov-remind-${o.id}`
+      );
+    }
+
+    // ── CASE 3: Reminder day is in the future (within 7 days) ──
+    if (daysUntil > remindDays && (daysUntil - remindDays) <= 7) {
+      const daysUntilReminder = daysUntil - remindDays;
+      scheduleAt(daysUntilReminder,
+        `${o.emoji} ${o.name} in ${remindDays} day${remindDays===1?"":"s"}!`,
+        `${catLabel(o.cat)} · ${MONTHS_SHORT[o.month-1]} ${o.day}`,
+        `ov-remind-future-${o.id}`
+      );
+    }
+
+    // ── CASE 4: Occasion itself is within 7 days ──
+    if (daysUntil > 0 && daysUntil <= 7) {
+      scheduleAt(daysUntil,
+        `${o.emoji} Today: ${o.name}! 🎉`,
+        o.note || `${catLabel(o.cat)} — Celebrate!`,
+        `ov-dayof-${o.id}`
+      );
     }
   });
+
+  console.log(`📅 Scheduled ${scheduledTimers.length} notification timer(s)`);
 }
 
 function checkNotificationsNow(force = false) {
@@ -1076,9 +1098,10 @@ function initApp() {
     db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   } catch(e) { console.warn("Firebase init failed:", e); }
 
-  // Check notification permission
-  if ("Notification" in window && Notification.permission === "granted") {
-    notifGranted = true;
+  // Sync notification state on startup
+  if ("Notification" in window) {
+    const suppressed = localStorage.getItem("ov-notif-suppressed") === "1";
+    notifGranted = Notification.permission === "granted" && !suppressed;
   }
 
   auth.onAuthStateChanged(user => {
@@ -1191,6 +1214,8 @@ function openProfile() {
   // Switch account subtitle
   const saved = getSavedAccounts();
   document.getElementById("switch-acct-sub").textContent = saved.length>1 ? `${saved.length} saved accounts` : "Add or switch accounts";
+  updateNotifToggleUI();
+  updateNextNotifInfo();
   document.getElementById("profile-modal").style.display = "flex";
 }
 function closeProfile() { document.getElementById("profile-modal").style.display = "none"; }
@@ -1205,60 +1230,75 @@ function changeAvatarColor() {
 }
 
 // Notification toggle
-function updateNotifUI() { updateNotifToggleUI(); } // alias
+function updateNotifUI() { updateNotifToggleUI(); }
 function updateNotifToggleUI() {
-  const permGranted = "Notification" in window && Notification.permission === "granted";
-  const suppressed  = localStorage.getItem("ov-notif-suppressed") === "1";
-  const granted = permGranted && !suppressed;
-  notifGranted = granted;
-  const track = document.getElementById("notif-track");
-  const thumb = document.getElementById("notif-thumb");
+  if (!("Notification" in window)) {
+    setToggleUI(false, "Not supported in this browser");
+    return;
+  }
+  const perm = Notification.permission;
+  const suppressed = localStorage.getItem("ov-notif-suppressed") === "1";
+  // "on" means browser granted AND user hasn't suppressed in-app
+  const on = (perm === "granted") && !suppressed;
+  notifGranted = on;
+  // Always sync toggle with actual state
+  if (perm === "granted" && !suppressed) {
+    setToggleUI(true, "✅ Notifications ON");
+  } else if (perm === "granted" && suppressed) {
+    setToggleUI(false, "Paused — tap to resume");
+  } else if (perm === "denied") {
+    setToggleUI(false, "Blocked by browser — tap to fix");
+  } else {
+    setToggleUI(false, "Tap to enable notifications");
+  }
+}
+function setToggleUI(on, statusText) {
+  const track  = document.getElementById("notif-track");
+  const thumb  = document.getElementById("notif-thumb");
   const status = document.getElementById("notif-status");
-  if (!track) return;
-  track.style.background = granted ? "var(--green)" : "#333";
-  thumb.style.left = granted ? "23px" : "3px";
-  status.textContent = granted ? "✅ Notifications enabled" : "Tap to enable";
-  status.style.color = granted ? "var(--green)" : "var(--muted)";
+  const banner = document.getElementById("notif-banner");
+  const hdrBtn = document.getElementById("notif-hdr-btn");
+  if (track) { track.style.background = on ? "var(--green)" : "#444"; }
+  if (thumb) { thumb.style.left = on ? "23px" : "3px"; }
+  if (status) { status.textContent = statusText; status.style.color = on ? "var(--green)" : "var(--muted)"; }
+  if (banner) banner.style.display = on ? "none" : "flex";
+  if (hdrBtn) hdrBtn.style.display = on ? "none" : "inline-block";
 }
 async function toggleNotifications() {
-  const permState = "Notification" in window ? Notification.permission : "denied";
+  if (!("Notification" in window)) { alert("Notifications not supported."); return; }
+  const perm = Notification.permission;
   const suppressed = localStorage.getItem("ov-notif-suppressed") === "1";
-  const effectivelyOn = permState === "granted" && !suppressed;
+  const currentlyOn = perm === "granted" && !suppressed;
 
-  if (effectivelyOn) {
-    // ── Turn OFF ──
-    // 1. Suppress all in-app notifications immediately
+  if (currentlyOn) {
+    // ── User taps to TURN OFF ──
     localStorage.setItem("ov-notif-suppressed", "1");
     notifGranted = false;
     scheduledTimers.forEach(t => clearTimeout(t));
     scheduledTimers = [];
     updateNotifToggleUI();
-    // 2. Open browser notification settings so user can also block at OS level
-    //    This is the ONLY way a web app can direct user to turn off at browser level
-    setTimeout(() => {
-      const isMobile = /Android/i.test(navigator.userAgent);
-      if (isMobile) {
-        // On Android Chrome, this deep-links directly to site notification settings
-        window.open("chrome://settings/content/notifications", "_blank");
-      }
-      // On iOS/desktop, browser prevents opening chrome:// but in-app suppression
-      // already stops all notifications — so nothing more needed
-    }, 400);
+    // Show brief confirmation
+    const st = document.getElementById("notif-status");
+    if (st) { st.textContent = "🔕 Notifications paused"; st.style.color = "var(--orange)"; }
+    setTimeout(updateNotifToggleUI, 1500);
 
-  } else if (permState === "granted" && suppressed) {
-    // ── Turn back ON (was suppressed) ──
+  } else if (perm === "granted" && suppressed) {
+    // ── Was paused — TURN BACK ON ──
     localStorage.removeItem("ov-notif-suppressed");
     notifGranted = true;
     updateNotifToggleUI();
     scheduleAllNotifications();
-    fireNotification("🔔 OccasionVault", "Notifications are back ON! 🎉", "ov-resumed");
+    // Fire confirmation notification
+    setTimeout(() => {
+      fireNotification("🔔 OccasionVault", "Notifications are ON! You'll be reminded on time. 🎉", "ov-on");
+    }, 500);
 
-  } else if (permState === "default") {
-    // ── Never asked before — show native browser popup ──
+  } else if (perm === "default") {
+    // ── Never asked — show native browser Allow/Block popup ──
     await requestNotif();
 
-  } else if (permState === "denied") {
-    // ── Was blocked via browser — open browser settings directly ──
+  } else if (perm === "denied") {
+    // ── Browser blocked it ──
     showUnblockModal();
   }
 }
@@ -1912,6 +1952,52 @@ function setFilterSidebar(f) {
 function sidebarNavClick(f) {
   document.querySelectorAll(".sidebar-cat-item").forEach(el=>el.classList.remove("active"));
   document.getElementById("snav-all")?.classList.add("active");
+}
+
+function sendTestNotification() {
+  if (!notifGranted) { toggleNotifications(); return; }
+  fireNotification(
+    "🔔 Test — OccasionVault",
+    "Notifications are working correctly! Your reminders will fire on time. ✅",
+    "ov-test-" + Date.now()
+  );
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = "✅ Sent!";
+  setTimeout(() => btn.textContent = orig, 2000);
+}
+
+function rescheduleFromProfile() {
+  scheduleAllNotifications();
+  updateNextNotifInfo();
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = `✅ ${scheduledTimers.length} scheduled`;
+  setTimeout(() => btn.textContent = orig, 2500);
+}
+
+function updateNextNotifInfo() {
+  const el = document.getElementById("next-notif-info");
+  if (!el) return;
+  if (!notifGranted) { el.textContent = ""; return; }
+  // Find soonest upcoming occasion
+  const sorted = sortOccasions(occasions).filter(o => {
+    const d = getDaysUntil(o.month, o.day, o.recurring, o.fullDate, o.recurrenceMode);
+    return d !== null && d >= 0;
+  });
+  if (sorted.length === 0) { el.textContent = "No upcoming occasions"; return; }
+  const next = sorted[0];
+  const days = getDaysUntil(next.month, next.day, next.recurring, next.fullDate, next.recurrenceMode);
+  const remindDays = parseInt(next.remind || 7);
+  const remindAt   = formatTime(next.remindTime || "09:00");
+  if (days === 0) {
+    el.textContent = `Next: ${next.emoji} ${next.name} — TODAY at ${remindAt}`;
+  } else if (days <= remindDays) {
+    el.textContent = `Next: ${next.emoji} ${next.name} reminder in ${days}d at ${remindAt}`;
+  } else {
+    el.textContent = `Next reminder: ${next.emoji} ${next.name} in ${days - remindDays}d at ${remindAt}`;
+  }
+  el.style.color = "var(--primary)";
 }
 
 function quickAdd(cat) {
