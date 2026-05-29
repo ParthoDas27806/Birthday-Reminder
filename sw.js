@@ -1,5 +1,5 @@
 // OccasionVault Service Worker v5
-const CACHE = "occasionvault-v5";
+const CACHE = "occasionvault-v6";
 
 self.addEventListener("install", () => self.skipWaiting());
 
