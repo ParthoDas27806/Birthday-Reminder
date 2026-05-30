@@ -879,6 +879,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 
 <script>
 // ═══════════════════════════════════════════════
@@ -1042,25 +1043,51 @@ async function requestNotif() {
     alert("This browser doesn't support notifications. Try Chrome or Firefox.");
     return;
   }
-  // If already denied, show direct settings modal (no text instructions)
   if (Notification.permission === "denied") {
     showUnblockModal();
     return;
   }
   const perm = await Notification.requestPermission();
-  const wasEnabled = localStorage.getItem("ov-notif-suppressed") !== "1";
   notifGranted = perm === "granted";
   if (notifGranted) {
     localStorage.removeItem("ov-notif-suppressed");
     updateNotifUI();
-    // Fire a real test notification immediately
-    fireNotification("🔔 OccasionVault", "Notifications are ON! You'll never miss an occasion.", `ov-test-${Date.now()}`);
-    // Schedule all occasions
+    // Register FCM token for server-side push (works even when app is closed)
+    await registerFCMToken();
+    fireNotification(
+      "🔔 OccasionVault",
+      "Notifications ON! Reminders will fire at your exact set time — even when the app is closed. ✅",
+      "ov-test-" + Date.now()
+    );
     scheduleAllNotifications();
-    // Also check right now for today/overdue
     checkNotificationsNow(true);
   }
   updateNotifToggleUI();
+}
+
+async function registerFCMToken() {
+  try {
+    if (typeof VAPID_KEY === "undefined" || VAPID_KEY.includes("PASTE_YOUR")) {
+      console.warn("FCM: Add your VAPID key for server push notifications");
+      return;
+    }
+    if (!firebase.messaging) { console.warn("FCM SDK not loaded"); return; }
+    const msgInstance = firebase.messaging();
+    const swReg = await navigator.serviceWorker.getRegistration("./firebase-messaging-sw.js");
+    const token = await msgInstance.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+    if (token && db && currentUser && !isGuest) {
+      await db.collection("users").doc(currentUser.uid)
+        .collection("meta").doc("fcmToken")
+        .set({
+          token,
+          updatedAt: Date.now(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        });
+      console.log("✅ FCM token saved — server push enabled");
+    }
+  } catch(e) {
+    console.warn("FCM token registration failed (local scheduling still works):", e.message);
+  }
 }
 
 function fireNotification(title, body, tag) {
@@ -1206,6 +1233,11 @@ function initApp() {
     db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   } catch(e) { console.warn("Firebase init failed:", e); }
 
+  // ── FCM VAPID Key ─────────────────────────────────────────────────
+  // Get this from: Firebase Console → Project Settings →
+  // Cloud Messaging → Web Push certificates → Generate key pair
+  const VAPID_KEY = "BBDDj6ZdBLybGB7Yauamsz2U_JPCHfWt3IcyfcfaEPPPVOox2CwQHS5tt4jAvLzpJozjOjxVsYMTjmlbjQhcvMk";
+
   // Sync notification state on startup
   if ("Notification" in window) {
     const suppressed = localStorage.getItem("ov-notif-suppressed") === "1";
@@ -1265,6 +1297,8 @@ function showApp() {
     const b = document.getElementById("install-banner");
     if (b) b.style.display = "flex";
   }
+  // Silently register FCM token for server-side push
+  if (notifGranted && !isGuest) setTimeout(()=>registerFCMToken().catch(()=>{}), 2000);
 }
 function updateHeaderAuth() {
   const btn    = document.getElementById("auth-hdr-btn");
@@ -2240,15 +2274,15 @@ initApp();
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
+      // Register main SW
       const reg = await navigator.serviceWorker.register("./sw.js");
-      // Force immediate update check
       reg.update();
-      // Clear all old caches immediately
+      // Clear old caches
       const keys = await caches.keys();
-      await Promise.all(
-        keys.filter(k => k !== "occasionvault-v6").map(k => caches.delete(k))
-      );
-    } catch(e) {}
+      await Promise.all(keys.filter(k => k !== "occasionvault-v6").map(k => caches.delete(k)));
+      // Register Firebase Messaging SW (needed for background push)
+      await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+    } catch(e) { console.warn("SW registration:", e); }
   });
 }
 </script>
