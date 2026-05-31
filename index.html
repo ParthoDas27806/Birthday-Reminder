@@ -958,6 +958,8 @@ const ZODIAC = [
 ];
 
 let occasions = [], currentUser = null, isGuest = false;
+// FCM VAPID Key — global scope so all functions can access it
+const VAPID_KEY = "BBDDj6ZdBLybGB7Yauamsz2U_JPCHfWt3IcyfcfaEPPPVOox2CwQHS5tt4jAvLzpJozjOjxVsYMTjmlbjQhcvMk";
 let selectedId = null, activeFilter = "all";
 let selectedCat = "birthday", selectedEmoji = "🎂";
 let isRecurring = true, isSignUpMode = false;
@@ -1067,26 +1069,42 @@ async function requestNotif() {
 
 async function registerFCMToken() {
   try {
-    if (typeof VAPID_KEY === "undefined" || VAPID_KEY.includes("PASTE_YOUR")) {
-      console.warn("FCM: Add your VAPID key for server push notifications");
+    if (!("serviceWorker" in navigator)) return;
+    if (typeof firebase === "undefined" || !firebase.messaging) return;
+    if (!currentUser || isGuest || !db) return;
+
+    const msgInstance = firebase.messaging();
+
+    // Ensure firebase-messaging-sw.js is registered
+    let swReg = await navigator.serviceWorker.getRegistration("./firebase-messaging-sw.js");
+    if (!swReg) {
+      swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+      await swReg.update();
+    }
+
+    // Get FCM token
+    const token = await msgInstance.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+
+    if (!token) {
+      console.warn("FCM: No token received — check VAPID key in Firebase Console");
       return;
     }
-    if (!firebase.messaging) { console.warn("FCM SDK not loaded"); return; }
-    const msgInstance = firebase.messaging();
-    const swReg = await navigator.serviceWorker.getRegistration("./firebase-messaging-sw.js");
-    const token = await msgInstance.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
-    if (token && db && currentUser && !isGuest) {
-      await db.collection("users").doc(currentUser.uid)
-        .collection("meta").doc("fcmToken")
-        .set({
-          token,
-          updatedAt: Date.now(),
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        });
-      console.log("✅ FCM token saved — server push enabled");
-    }
+
+    // Save token to Firestore
+    await db.collection("users").doc(currentUser.uid)
+      .collection("meta").doc("fcmToken")
+      .set({
+        token,
+        updatedAt:  Date.now(),
+        timezone:   Intl.DateTimeFormat().resolvedOptions().timeZone,
+        userAgent:  navigator.userAgent.substring(0, 100)
+      });
+
+    console.log("✅ FCM token saved to Firestore — you will receive notifications even when app is closed");
+    localStorage.setItem("ov-fcm-registered", "1");
+
   } catch(e) {
-    console.warn("FCM token registration failed (local scheduling still works):", e.message);
+    console.warn("FCM registration error:", e.code || e.message);
   }
 }
 
@@ -1233,10 +1251,7 @@ function initApp() {
     db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
   } catch(e) { console.warn("Firebase init failed:", e); }
 
-  // ── FCM VAPID Key ─────────────────────────────────────────────────
-  // Get this from: Firebase Console → Project Settings →
-  // Cloud Messaging → Web Push certificates → Generate key pair
-  const VAPID_KEY = "BBDDj6ZdBLybGB7Yauamsz2U_JPCHfWt3IcyfcfaEPPPVOox2CwQHS5tt4jAvLzpJozjOjxVsYMTjmlbjQhcvMk";
+
 
   // Sync notification state on startup
   if ("Notification" in window) {
@@ -1379,7 +1394,8 @@ function updateNotifToggleUI() {
   notifGranted = on;
   // Always sync toggle with actual state
   if (perm === "granted" && !suppressed) {
-    setToggleUI(true, "✅ Notifications ON");
+    const _fcmOk = localStorage.getItem("ov-fcm-registered")==="1";
+  setToggleUI(true, _fcmOk ? "✅ ON — works even when app is closed" : "✅ ON — open app daily for reminders");
   } else if (perm === "granted" && suppressed) {
     setToggleUI(false, "Paused — tap to resume");
   } else if (perm === "denied") {
